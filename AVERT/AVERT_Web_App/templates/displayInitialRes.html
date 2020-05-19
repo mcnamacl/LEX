@@ -35,7 +35,7 @@
 <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" />
 <div class="table-responsive">
     <table id="results" class="table table-striped table-hover">
-        {% if dists is not none %}
+        {% if dists|length != 0 %}
         <thead>
             <tr>
                 <th>Compare<br><input type="checkbox" onClick="toggle(this)" />Select All</th>
@@ -47,7 +47,7 @@
                         style="width:20px;height:20px;"></th>
             </tr>
         </thead>
-        <tbody>
+        <!-- <tbody>
             {% for dist in dists %}
             <tr>
                 {% if dist != startdate or dist != enddate %}
@@ -63,7 +63,7 @@
                 {% endif %}
             </tr>
             {% endfor %}
-        </tbody>
+        </tbody> -->
         {% endif %}
     </table>
     <table id="header-fixed" class="table table-striped table-hover"></table>

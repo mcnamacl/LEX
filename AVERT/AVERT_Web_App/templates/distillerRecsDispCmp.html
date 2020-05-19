@@ -19,7 +19,6 @@
             <option value="Complications">Complications</option>
             <option value="Plasma Exchange">Plasma Exchange</option>
             <option value="Biopsy">Biopsy</option>
-            <option value="Pmpbreakdown">PmP Breakdown</option>
         </select>
         <button type="submit" name="muldistrecs" value="{{ muldistrecs }}">Go</button>
         <br>
@@ -47,124 +46,6 @@
     </table>
 </div>
 {% endif %}
-
-{% if pmpbreakdown and results != None %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
-<div class="split left">
-    <div class="w3-container">
-        <canvas id="doughnut-chart" width="400" height="400"></canvas>
-    </div>
-</div>
-
-{% if latlon != None %}
-<div class="split right">
-    <div id="googleMap" style="width:100%;height:400px"></div>
-</div>
-{% endif %}
-
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" />
-<br>
-<div class="stay">
-    <div class="table-responsive">
-        <table id="results" class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>Patient ID</th>
-                    <th>Total Number of PmP</th>
-                    <th>Number of PmP with Locations</th>
-                    <th>Number of PmP without Locations</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for res in results %}
-                <tr>
-                    <td>{{ res }}</td>
-                    <td>{{ results[res].numrecs }}</td>
-                    <td>{{ results[res].numloc }}</td>
-                    <td>{{ results[res].numnoloc }}</td>
-                </tr>
-                {% endfor %}
-                <tr>
-                    <td style="font-weight: bold">Total</td>
-                    <td id="total"></td>
-                    <td id="numloc"></td>
-                    <td id="numnoloc"></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-{% if latlon != None %}
-<script>
-    function myMap() {
-        var data = JSON.parse('{{ latlon | tojson | safe }}');
-        var coordinates = [];
-        var titles = [];
-        for (x in data) {
-            var tmp = { lat: parseFloat(data[x]["lat"]), lng: parseFloat(data[x]["lon"]) }
-            coordinates.push(tmp);
-            titles.push(x);
-        }
-        var map = new google.maps.Map(
-            document.getElementById("googleMap"), { zoom: 4, center: coordinates[0] });
-        var i;
-        for (i = 0; i < coordinates.length; i++) {
-            var marker = new google.maps.Marker({ position: coordinates[i], map: map, title: titles[i] });
-        }
-    }
-</script>
-
-<script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDhRvZrbIGAX_Q_Ebw1pGymW0dBhsln6wE&callback=myMap"></script>
-{% endif %}
-
-<script>
-    var data = JSON.parse('{{ results | tojson | safe }}');
-    var total = 0, pmpl = 0, pmpwl = 0;
-    for (res in data) {
-        total = data[res].numrecs + total;
-        pmpl = data[res].numloc + pmpl;
-        pmpwl = data[res].numnoloc + pmpwl;
-    }
-
-    var pmpchart = new Chart(document.getElementById("doughnut-chart"), {
-        type: 'doughnut',
-        data: {
-            labels: ["PmP with Locations", "PmP without Locations"],
-            datasets: [
-                {
-                    label: "PmP Breakdown",
-                    backgroundColor: ["#3e95cd", "#8e5ea2"],
-                    data: [pmpl, pmpwl]
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            title: {
-                display: true,
-                text: 'PmP Breakdown'
-            }
-        }
-    });
-</script>
-{% endif %}
-
-<script>
-    var data = JSON.parse('{{ results | tojson | safe }}');
-    var total = 0, pmpl = 0, pmpwl = 0;
-    for (res in data) {
-        total = data[res].numrecs + total;
-        pmpl = data[res].numloc + pmpl;
-        pmpwl = data[res].numnoloc + pmpwl;
-    }
-
-    document.getElementById('total').innerHTML = total;
-    document.getElementById('numloc').innerHTML = pmpl;
-    document.getElementById('numnoloc').innerHTML = pmpwl;
-</script>
 
 {% if contmeds and results != None and indivpatient %}
 <form action="/distillerrecsdispcmp" method="POST">
