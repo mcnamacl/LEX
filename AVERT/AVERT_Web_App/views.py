@@ -2,18 +2,15 @@ from django.shortcuts import render
 from flask import Flask, request, render_template, jsonify
 from collections import defaultdict
 import urllib.request, json, requests, sys, re
-from datetime import date, datetime
-from dateutil.relativedelta import relativedelta
-from datetime import timedelta  
+import datetime
 import urllib.parse
 from collections import OrderedDict
-
 
 def index(request):
     return render(request, "index.html")
 
 def getpatientid(request):
-    dists = None
+    recs = None
     r = None
 
     patienttype = str(request.POST.get("mulpatients"))
@@ -28,7 +25,7 @@ def getpatientid(request):
     if  (request.POST.get("enddate") != ''):
         enddate = request.POST.get("enddate")
 
-    # dists = distrecs(True, "None", addflare, startdate, enddate, True)
+    recs = get_recs(True, startdate, enddate, True)
 
     if startdate == None:
         startdate = ''
@@ -37,8 +34,8 @@ def getpatientid(request):
         enddate = ''
 
     context = {
-        "dists" : dists,
-        "originaldists" : None, 
+        "recs" : recs,
+        "originaldists" : json.dumps(recs), 
         "startdate" : startdate, 
         "enddate" : enddate
     }
@@ -303,111 +300,69 @@ def urlify(in_string):
 # def removedisturl(text):
 #     return text.replace("http://data.avert.ie/vocabulary/distiller/", "")
 
-def distrecs(adddist, startdate, enddate, mulpatients):
-    dists = None
+def get_recs(adddist, startdate, enddate, mulpatients):
+    recs = None
     r = None
-    querysel = "SELECT DISTINCT "
-    querywh = " WHERE {"
-    if adddist:
-        dists = {}
-        querysel = querysel + "?dist_r ?dist_date "
-        querywh = (querywh + "?dist_r a <http://data.avert.ie/vocabulary/distiller/DistillerPatientRecord> .")
-        querysel = querysel + " ?dist_id" 
-        querywh = querywh + "?dist_r <http://data.avert.ie/vocabulary/distiller/avertID> ?dist_id ."
-            
-        #querysel = querysel + " ?dist_f"
-        #querywh = querywh + "?dist_r <http://data.avert.ie/vocabulary/distiller/isFlare> ?dist_f ."
+    querywh = """PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+    prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#> 
+prefix rkddict: <http://data.avert.ie/data/rkddict/>
+prefix rkdvoc: <http://data.avert.ie/voc/rkd/> 
+prefix rkddata: <http://data.avert.ie/data/rkd/> 
+prefix dc: <http://purl.org/dc/terms/> 
+prefix prov: <http://www.w3.org/ns/prov#>
 
-        querysel = querysel + " ?category"
-        querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/recordCategory> ?category ."
-
-        querywh = querywh + "?dist_r <http://purl.org/dc/terms/date> ?dist_date ."
-
-        querysel = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> " + querysel
-        querysel = querysel + " ?country ?employment ?dob ?gen "
-        querywh = querywh + "OPTIONAL { ?dist_r <http://data.avert.ie/vocabulary/distiller/countryOfBirth> ?country . "
-        querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/employmentStatus> ?employment ."
-        querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/patientGender> ?gen ."
-        querywh = querywh + "?dist_r <http://dbpedia.org/ontology#birthDate> ?dob . }"
-
-        if startdate != None and enddate != None:
-            querywh = querywh + " FILTER ( ?dist_date <= %22" + startdate + "%22^^xsd:date && ?dist_date > %22" + enddate + "%22^^xsd:date)"
-
-        elif enddate != None:
-            querywh = querywh + " FILTER (?dist_date > %22" + enddate + "%22^^xsd:date)"
-        
-        elif startdate != None:
-            querywh = querywh + " FILTER ( ?dist_date <= %22" + startdate + "%22^^xsd:date)"
-
-    querywh = querywh + " }"
-    
-    if adddist:
-        querywh = querywh + " ORDER BY ?dist_id ?dist_date"
-
-    finalquery = createquery(querysel + querywh)
+SELECT DISTINCT ?id ?hosp_val ?yob_val ?gen_val
+WHERE {
+?pr a rkdvoc:RKDRecord.
+?pr rkdvoc:patientID ?id.
+?pr rkdvoc:hasReading ?r2, ?r3, ?r4.
+?r2 rkdvoc:hasTerm rkddict:hospital.
+?r2 rkdvoc:hasValue ?hosp_key.
+?r3 rkdvoc:hasTerm rkddict:year_of_birth.
+?r3 rkdvoc:hasValue ?yob_val.
+?r4 rkdvoc:hasTerm rkddict:gender.
+?r4 rkdvoc:hasValue ?gen_key.
+  OPTIONAL {
+    	rkddict:hospital rkdvoc:hasKeyValuePair ?kvp1.
+        ?kvp1 rkdvoc:key ?hosp_key.
+        ?kvp1 rkdvoc:value ?hosp_val.
+    	rkddict:gender rkdvoc:hasKeyValuePair ?kvp2.
+        ?kvp2 rkdvoc:key ?gen_key.
+        ?kvp2 rkdvoc:value ?gen_val.
+    }
+} 
+ORDER BY asc(xsd:integer(?id))
+LIMIT 10"""
+    finalquery = createquery(querywh)
     site = urlify(finalquery)   
     r = getjsonresults(site)
 
-    for dist in r:
-        patientid = dist["dist_id"]["value"]
-        distname = removeurl(dist["dist_r"]["value"])
-        if not (patientid in dists):
-            dists[patientid] = {}
-            alreadythere = False
+    # print(r, file=sys.stderr)
+    recs = {}
 
-        dists[patientid][distname] = {}
-        dists[patientid][distname]["dist_date"] = dist["dist_date"]["value"]               
-        #dists[patientid][distname]["dist_f"] = dist["dist_f"]["value"]
-        #seperate if statements
-        if dist["category"]["value"] == "Demographics":
-            if "country" in dist:
-                dists[patientid]["country"] = dist["country"]["value"]
-                dists[patientid]["employment"] = dist["employment"]["value"]
-                dists[patientid]["gen"] = dist["gen"]["value"]
-                dists[patientid]["dob"] = dist["dob"]["value"]
+    for rec in r:
+        patientId = rec["id"]["value"]
+        recs[patientId] = {}
+        recs[patientId]["gen_val"] = rec["gen_val"]["value"]
+        recs[patientId]["hosp_val"] = rec["hosp_val"]["value"]        
+        recs[patientId]["yob_val"] = rec["yob_val"]["value"]  
+        recs[patientId]["age"] = datetime.datetime.now().year - int(rec["yob_val"]["value"])
 
-                enddate = datetime.strptime(dists[patientid]["dob"], '%Y-%m-%d')
-                startdate = date.today()
-                age = relativedelta(startdate, enddate).years
+    # print(recs, file=sys.stderr)
 
-                dists[patientid]["age"] = int(age)
-                alreadythere = True
-
-            else:
-                if not alreadythere:
-                    attempt = getDemoOnly(patientid)
-                    if attempt != []:
-                        dists[patientid]["country"] = attempt[0]["country"].get("value")
-                        dists[patientid]["employment"] = attempt[0]["employment"].get("value")
-                        dists[patientid]["gen"] = attempt[0]["gen"].get("value")
-                        dists[patientid]["dob"] = attempt[0]["dob"].get("value")
-
-                        enddate = datetime.strptime(dists[patientid]["dob"], '%Y-%m-%d')
-                        startdate = date.today()
-                        age = relativedelta(startdate, enddate).years
-
-                        dists[patientid]["age"] = int(age)
-                    else:
-                        dists[patientid]["country"] = "-"
-                        dists[patientid]["employment"] = "-"
-                        dists[patientid]["gen"] = "-"
-                        dists[patientid]["dob"] = "-"
-                        dists[patientid]["age"] = "-"
-                    alreadythere = True
-
-                dists[patientid][distname]["category"] = dist["category"]["value"]
-    return dists
+    return recs
 
 # def getDemoOnly(patientid):
 #     querysel = "SELECT DISTINCT "
 #     querywh = " WHERE {"
-#     querysel = querysel + " ?country ?employment ?dob ?gen "
+#     querysel = querysel + " ?country ?employment ?yob ?gen "
 #     querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/recordCategory> ?category ."
 #     querywh = querywh + "?dist_r <http://data.avert.ie/vocabulary/distiller/avertID>%22" + patientid + "%22."
 #     querywh = querywh + "?dist_r <http://data.avert.ie/vocabulary/distiller/countryOfBirth> ?country . "
 #     querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/employmentStatus> ?employment ."
 #     querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/patientGender> ?gen ."
-#     querywh = querywh + "?dist_r <http://dbpedia.org/ontology#birthDate> ?dob . }"
+#     querywh = querywh + "?dist_r <http://dbpedia.org/ontology#birthDate> ?yob . }"
 #     finalquery = createquery(querysel + querywh)
 #     site = urlify(finalquery)
 #     return getjsonresults(site)

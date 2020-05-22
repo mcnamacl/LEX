@@ -35,47 +35,49 @@
 <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" />
 <div class="table-responsive">
     <table id="results" class="table table-striped table-hover">
-        {% if dists|length != 0 %}
+        {% if recs|safe != 0 %}
         <thead>
             <tr>
                 <th>Compare<br><input type="checkbox" onClick="toggle(this)" />Select All</th>
                 <th>ID</th>
                 <th style="cursor: pointer;" onclick="sortTable(1)">Gender <img src="/static/triangle.png"
                         style="width:20px;height:20px;"></th>
-                <th>Age</th>
-                <th style="cursor: pointer;" onclick="sortTable(2)">Date of Birth <img src="/static/triangle.png"
+                <th>Hospital</th>
+                <th style="cursor: pointer;" onclick="sortTable(2)">Year of Birth <img src="/static/triangle.png"
                         style="width:20px;height:20px;"></th>
+                <th>Age</th>
             </tr>
         </thead>
-        <!-- <tbody>
-            {% for dist in dists %}
+        <tbody>
+            {% for rec, rec_vals in recs.items %}
             <tr>
-                {% if dist != startdate or dist != enddate %}
-                <td><input type="checkbox" name="cmpdistcheck" id="cmpdistcheck" value="{{ dist }}"
+                {% if rec != startdate or rec != enddate %}
+                <td><input type="checkbox" name="cmpdistcheck" id="cmpdistcheck" value="{{ rec }}"
                         onclick="addDistRec(this)"></td>
                 <form action="/distillerrecsdispcmp" method="POST">
                     <td><button type="submit" id="distcmp" name="muldistrecs" class="distbutton"
-                            value="{{ dist }}">{{ dist }}</button></td>
+                            value="{{ recs }}">{{ rec }}</button></td>
+                <td>{{ rec_vals.gen_val }}</td>
+                <td>{{ rec_vals.hosp_val }}</td>
+                <td>{{ rec_vals.yob_val }}</td>
+                <td>{{ rec_vals.age }}</td>
                 </form>
-                <td>{{ dists[dist].gen }}</td>
-                <td>{{ dists[dist].age }}</td>
-                <td>{{ dists[dist].dob }}</td>
                 {% endif %}
             </tr>
             {% endfor %}
-        </tbody> -->
+        </tbody>
         {% endif %}
     </table>
     <table id="header-fixed" class="table table-striped table-hover"></table>
 </div>
 
 <script>
-    var dates = JSON.parse('{{ originaldists | tojson | safe }}');
+    var dates = JSON.parse('{{ originaldists | safe }}');
+    console.log(dates);
+    var recdict = {};
 
-    var distdict = {};
-
-    distdict["startdate"] = "{{ startdate }}"
-    distdict["enddate"] = "{{ enddate }}"
+    recdict["startdate"] = "{{ startdate }}"
+    recdict["enddate"] = "{{ enddate }}"
 
     function toggle(source) {
         checkboxes = document.getElementsByName('cmpdistcheck');
@@ -86,15 +88,15 @@
     }
     function addDistRec(element) {
         var val = element.value;
-        if (distdict[val] == null) {
-            distdict[val] = "true";
-        } else if (distdict[val] == "true") {
-            distdict[val] = "false";
-        } else if (distdict[val] == "false") {
-            distdict[val] = "true";
+        if (recdict[val] == null) {
+            recdict[val] = "true";
+        } else if (recdict[val] == "true") {
+            recdict[val] = "false";
+        } else if (recdict[val] == "false") {
+            recdict[val] = "true";
         }
-        console.log(distdict)
-        document.getElementById("distcmp").value = JSON.stringify(distdict);
+        console.log(recdict)
+        document.getElementById("distcmp").value = JSON.stringify(recdict);
     }
 </script>
 
@@ -173,7 +175,7 @@
         rows = [].slice.call(tbody.querySelectorAll("tr"));
 
         rows.sort(function (a, b) {
-            return convertDate(a.cells[0].innerHTML) - convertDate(b.cells[0].innerHTML);
+            return a.cells[0].innerHTML - b.cells[0].innerHTML;
         });
 
         rows.forEach(function (v) {
