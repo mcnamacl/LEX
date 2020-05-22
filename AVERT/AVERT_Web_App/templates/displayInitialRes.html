@@ -15,7 +15,7 @@
     <p>Displaying all patients from {{ enddate }}.</p>
     {% elif startdate == '' and enddate == '' %}
     <p>Displaying all patients.</p>
-    {% endif %}       
+    {% endif %}
     <h4>Filter by:</h4>
     <form action="/displayinitialres" method="POST">
         <select name="gender">
@@ -57,10 +57,10 @@
                 <form action="/distillerrecsdispcmp" method="POST">
                     <td><button type="submit" id="distcmp" name="muldistrecs" class="distbutton"
                             value="{{ recs }}">{{ rec }}</button></td>
-                <td>{{ rec_vals.gen_val }}</td>
-                <td>{{ rec_vals.hosp_val }}</td>
-                <td>{{ rec_vals.yob_val }}</td>
-                <td>{{ rec_vals.age }}</td>
+                    <td>{{ rec_vals.gen_val }}</td>
+                    <td>{{ rec_vals.hosp_val }}</td>
+                    <td>{{ rec_vals.yob_val }}</td>
+                    <td>{{ rec_vals.age }}</td>
                 </form>
                 {% endif %}
             </tr>
@@ -73,7 +73,6 @@
 
 <script>
     var dates = JSON.parse('{{ originaldists | safe }}');
-    console.log(dates);
     var recdict = {};
 
     recdict["startdate"] = "{{ startdate }}"
@@ -117,13 +116,16 @@
     });
 
     function sortTable(n) {
-        if (n == 2) {
-            sortByDate();
-        }
-
         var num;
-        n = n + 1;
+
+        if (n == 1) {
+            n = n + 1;
+        } else {
+            n = n + 2
+        }
         num = 1;
+
+        console.log(n);
 
         var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
         table = document.getElementById("results");
@@ -140,15 +142,30 @@
                 x = rows[i].getElementsByTagName("TD")[n];
                 y = rows[i + 1].getElementsByTagName("TD")[n];
 
-                if (dir == "asc") {
-                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
+                if (n == 4) {
+                    if (dir == "asc") {
+                        if (Number(x.innerHTML) > Number(y.innerHTML)) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (Number(x.innerHTML) < Number(y.innerHTML)) {
+                            shouldSwitch = true;
+                            break;
+                        }
                     }
-                } else if (dir == "desc") {
-                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
+                }
+                else {
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -164,23 +181,6 @@
                 }
             }
         }
-    }
-    function convertDate(d) {
-        var p = d.split("/");
-        return +(p[2] + p[1] + p[0]);
-    }
-
-    function sortByDate() {
-        var tbody = document.querySelector("#results tbody");
-        rows = [].slice.call(tbody.querySelectorAll("tr"));
-
-        rows.sort(function (a, b) {
-            return a.cells[0].innerHTML - b.cells[0].innerHTML;
-        });
-
-        rows.forEach(function (v) {
-            tbody.appendChild(v);
-        });
     }
 </script>
 

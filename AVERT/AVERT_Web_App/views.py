@@ -316,6 +316,7 @@ SELECT DISTINCT ?id ?hosp_val ?yob_val ?gen_val
 WHERE {
 ?pr a rkdvoc:RKDRecord.
 ?pr rkdvoc:patientID ?id.
+?pr rkdvoc:recordCategory "none".
 ?pr rkdvoc:hasReading ?r2, ?r3, ?r4.
 ?r2 rkdvoc:hasTerm rkddict:hospital.
 ?r2 rkdvoc:hasValue ?hosp_key.
@@ -338,7 +339,6 @@ LIMIT 10"""
     site = urlify(finalquery)   
     r = getjsonresults(site)
 
-    # print(r, file=sys.stderr)
     recs = {}
 
     for rec in r:
@@ -349,23 +349,8 @@ LIMIT 10"""
         recs[patientId]["yob_val"] = rec["yob_val"]["value"]  
         recs[patientId]["age"] = datetime.datetime.now().year - int(rec["yob_val"]["value"])
 
-    # print(recs, file=sys.stderr)
-
     return recs
 
-# def getDemoOnly(patientid):
-#     querysel = "SELECT DISTINCT "
-#     querywh = " WHERE {"
-#     querysel = querysel + " ?country ?employment ?yob ?gen "
-#     querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/recordCategory> ?category ."
-#     querywh = querywh + "?dist_r <http://data.avert.ie/vocabulary/distiller/avertID>%22" + patientid + "%22."
-#     querywh = querywh + "?dist_r <http://data.avert.ie/vocabulary/distiller/countryOfBirth> ?country . "
-#     querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/employmentStatus> ?employment ."
-#     querywh = querywh + " ?dist_r <http://data.avert.ie/vocabulary/distiller/patientGender> ?gen ."
-#     querywh = querywh + "?dist_r <http://dbpedia.org/ontology#birthDate> ?yob . }"
-#     finalquery = createquery(querysel + querywh)
-#     site = urlify(finalquery)
-#     return getjsonresults(site)
 
 # def getenddate(timequantity, timemeasure, startdate):
 #     startdate = datetime.strptime(startdate, '%Y-%m-%d')
@@ -375,48 +360,6 @@ LIMIT 10"""
 #     elif (timemeasure == "2"):
 #         enddate = startdate + relativedelta(months=-timequantity)
 #     return enddate
-
-# def getDemo(patientid):
-#     querysel = "SELECT distinct "
-#     querysel = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> " + querysel
-#     querysel = querysel + " ?lab ?val"
-#     querywh = " WHERE { "
-#     querywh = querywh + " { ?dist a <http://data.avert.ie/vocabulary/distiller/DistillerPatientRecord> . "
-#     querywh = querywh + " ?dist <http://data.avert.ie/vocabulary/distiller/avertID> %22" + patientid + "%22 . " 
-#     querywh = querywh + " ?dist <http://data.avert.ie/vocabulary/distiller/recordCategory> %22Demographics%22 . "
-#     querywh = querywh + " ?dist ?lab ?val . } "
-#     querywh = querywh + " UNION {"
-#     querywh = querywh + " ?dist a <http://data.avert.ie/vocabulary/distiller/DistillerPatientRecord> ."
-#     querywh = querywh + " ?dist <http://data.avert.ie/vocabulary/distiller/avertID> %22" + patientid + "%22 . " 
-#     querywh = querywh + " ?dist <http://data.avert.ie/vocabulary/distiller/recordCategory> %22Demographics%22. "
-#     querywh = querywh + " ?dist <http://data.avert.ie/vocabulary/distiller/hasMedicalReading> ?mr1 . "
-#     querywh = querywh + " ?mr1  <http://www.w3.org/2000/01/rdf-schema#label> ?lab . "
-#     querywh = querywh + " ?mr1  <http://data.avert.ie/vocabulary/distiller/readingValue> ?val . } "
-#     querywh = querywh + " UNION {"
-#     querywh = querywh + " ?dist a <http://data.avert.ie/vocabulary/distiller/DistillerPatientRecord> . "
-#     querywh = querywh + " ?dist <http://data.avert.ie/vocabulary/distiller/avertID> %22" + patientid + "%22 . " 
-#     querywh = querywh + " ?dist <http://data.avert.ie/vocabulary/distiller/recordCategory> %22Demographics%22. "
-#     querywh = querywh + " ?dist <http://data.avert.ie/vocabulary/distiller/hasMedicalReading> ?mr1 . "
-#     querywh = querywh + " ?mr1  ?p ?mr2 . "    
-#     querywh = querywh + " ?mr2  <http://www.w3.org/2000/01/rdf-schema#label> ?lab . "
-#     querywh = querywh + " ?mr2  <http://data.avert.ie/vocabulary/distiller/readingValue> ?val . } "
-#     querywh = querywh + " FILTER (?lab != <http://data.avert.ie/vocabulary/distiller/hasMedicalReading> )} "
-
-#     finalquery = createquery(querysel + querywh)
-#     site = urlify(finalquery)  
-#     r = getjsonresults(site)
-
-#     results = {}
-#     if r != {}:
-#         for dist in r:
-#             key = removedisturl(dist["lab"]["value"])
-#             if key == "http://dbpedia.org/ontology#birthDate":
-#                 results["Birth date"] = dist["val"]["value"]
-#             elif key != "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
-#                 key = re.sub("([a-z])([A-Z])","\g<1> \g<2>", key).capitalize()
-#                 results[key] = dist["val"]["value"]
-
-#     return results
     
 # def getContMeds(userinputs, startdate, enddate):
 #     contmeds = {}
