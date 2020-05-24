@@ -12,24 +12,12 @@
 
 {% block main %}
 <div class="wrap">
-    <form action="/distillerrecsdispcmp" method="post">
-        {% csrf_token %}
-        <div class="box">
-            <h2 class="head">Patient ID Search</h2>
-            <br>
-            <div class="search">
-                <input type="text" class="searchTerm" name="patientid" placeholder="Patient ID" id="search">
-                <button type="submit" name="indiv" class="searchButton">Go</button>               
-            </div>
-            <br>
-        </div>
-    </form>
     <div class="box">
         <h2 class="head">Multiple Patient Search</h2>
         <form action="{% url 'getpatientid' %}" method="post">
             {% csrf_token %}
-            Between <input type="date" name="enddate">
-            and <input type="date" name="startdate"> (Optional)
+            Between <input type="date" name="startdate">
+            and <input type="date" name="enddate"> (Optional)
             <button type="submit" name="mulpatients" value="True">Go</button>
         </form>
         <br>

@@ -21,17 +21,21 @@ def getpatientid(request):
 
     if (request.POST.get("startdate") != ''):
         startdate = request.POST.get("startdate")
+        # datetime.datetime.strptime(startdate, '%Y-%m-%d').strftime('%m/%d/%y')
     
     if  (request.POST.get("enddate") != ''):
         enddate = request.POST.get("enddate")
 
-    recs = get_recs(True, startdate, enddate, True)
-
+    print(startdate, file=sys.stderr)
+    print(enddate, file=sys.stderr)
+    
     if startdate == None:
         startdate = ''
     
     if enddate == None:
         enddate = ''
+
+    recs = get_recs(True, startdate, enddate, True)
 
     context = {
         "recs" : recs,
@@ -294,47 +298,50 @@ def urlify(in_string):
     in_string = in_string.replace("^", "%5E")   
     return in_string
 
-# def removevarurl(text):
-#     return text.replace("http://data.avert.ie/vocabulary/", "")
-
-# def removedisturl(text):
-#     return text.replace("http://data.avert.ie/vocabulary/distiller/", "")
-
 def get_recs(adddist, startdate, enddate, mulpatients):
     recs = None
     r = None
     querywh = """PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
     prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix xsd: <http://www.w3.org/2001/XMLSchema#> 
-prefix rkddict: <http://data.avert.ie/data/rkddict/>
-prefix rkdvoc: <http://data.avert.ie/voc/rkd/> 
-prefix rkddata: <http://data.avert.ie/data/rkd/> 
-prefix dc: <http://purl.org/dc/terms/> 
-prefix prov: <http://www.w3.org/ns/prov#>
+    prefix xsd: <http://www.w3.org/2001/XMLSchema#> 
+    prefix rkddict: <http://data.avert.ie/data/rkddict/>
+    prefix rkdvoc: <http://data.avert.ie/voc/rkd/> 
+    prefix rkddata: <http://data.avert.ie/data/rkd/> 
+    prefix dc: <http://purl.org/dc/terms/> 
+    prefix prov: <http://www.w3.org/ns/prov#>
 
-SELECT DISTINCT ?id ?hosp_val ?yob_val ?gen_val
-WHERE {
-?pr a rkdvoc:RKDRecord.
-?pr rkdvoc:patientID ?id.
-?pr rkdvoc:recordCategory "none".
-?pr rkdvoc:hasReading ?r2, ?r3, ?r4.
-?r2 rkdvoc:hasTerm rkddict:hospital.
-?r2 rkdvoc:hasValue ?hosp_key.
-?r3 rkdvoc:hasTerm rkddict:year_of_birth.
-?r3 rkdvoc:hasValue ?yob_val.
-?r4 rkdvoc:hasTerm rkddict:gender.
-?r4 rkdvoc:hasValue ?gen_key.
-  OPTIONAL {
-    	rkddict:hospital rkdvoc:hasKeyValuePair ?kvp1.
-        ?kvp1 rkdvoc:key ?hosp_key.
-        ?kvp1 rkdvoc:value ?hosp_val.
-    	rkddict:gender rkdvoc:hasKeyValuePair ?kvp2.
-        ?kvp2 rkdvoc:key ?gen_key.
-        ?kvp2 rkdvoc:value ?gen_val.
-    }
-} 
-ORDER BY asc(xsd:integer(?id))
-LIMIT 10"""
+    SELECT DISTINCT ?id ?hosp_val ?yob_val ?gen_val ?date
+    WHERE {
+    ?pr a rkdvoc:RKDRecord.
+    ?pr rkdvoc:patientID ?id.
+    ?pr rkdvoc:recordCategory "none".
+    ?pr rkdvoc:hasReading ?r1, ?r2, ?r3, ?r4.
+    ?r1 rkdvoc:hasTerm rkddict:date_of_diagnosis.
+    ?r1 rkdvoc:hasValue ?date.
+    ?r2 rkdvoc:hasTerm rkddict:hospital.
+    ?r2 rkdvoc:hasValue ?hosp_key.
+    ?r3 rkdvoc:hasTerm rkddict:year_of_birth.
+    ?r3 rkdvoc:hasValue ?yob_val.
+    ?r4 rkdvoc:hasTerm rkddict:gender.
+    ?r4 rkdvoc:hasValue ?gen_key.
+        OPTIONAL {
+            rkddict:hospital rkdvoc:hasKeyValuePair ?kvp1.
+            ?kvp1 rkdvoc:key ?hosp_key.
+            ?kvp1 rkdvoc:value ?hosp_val.
+            rkddict:gender rkdvoc:hasKeyValuePair ?kvp2.
+            ?kvp2 rkdvoc:key ?gen_key.
+            ?kvp2 rkdvoc:value ?gen_val.
+        }"""
+
+    # Waayyy too slow
+    if startdate != '' and enddate == '':
+        querywh = querywh + "FILTER (?date >= '" + startdate + "'^^xsd:date)"
+    elif enddate != '' and startdate == '':
+        querywh = querywh + "FILTER (?date <= '" + enddate + "'^^xsd:date)"
+    elif startdate != '' and enddate != '':
+        querywh = querywh + "FILTER (?date <= '" + enddate + "'^^xsd:date && ?date >= " + startdate + "^^xsd:date)"
+
+    querywh = querywh + "} ORDER BY asc(xsd:integer(?id)) ?pr ?pr_date LIMIT 10"
     finalquery = createquery(querywh)
     site = urlify(finalquery)   
     r = getjsonresults(site)
