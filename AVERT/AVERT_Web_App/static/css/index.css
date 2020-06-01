@@ -1,24 +1,19 @@
-body {
-    width: 100%;
+#leftbox {
     float: left;
-}
-
-.class1 {
     width: 25%;
-    float: left;
-    height: max-content;
+    height: 100vh;
 }
 
-.class2 {
+#middlebox {
+    float: left;
     width: 55%;
-    float: left;
-    height: max-content;
+    height: 100vh;
 }
 
-.class3 {
+#rightbox {
+    float: right;
     width: 20%;
-    float: left;
-    height: max-content;
+    height: 100vh;
 }
 
 p {
