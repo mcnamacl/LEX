@@ -9,6 +9,9 @@ from collections import OrderedDict
 def index(request):
     return render(request, "index.html")
 
+def initsearch(request):
+    return render(request, "initsearch.html")
+
 def getpatientid(request):
     recs = None
     r = None
