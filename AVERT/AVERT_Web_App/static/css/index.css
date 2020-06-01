@@ -20,3 +20,13 @@ p {
     padding-top: 25px;
     text-align: center;
 }
+
+td h2{
+    position:relative;
+  }
+   
+  td h2 span{
+    position:absolute;
+    left:0;
+    top:0;
+  }
