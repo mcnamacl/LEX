@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 
 {% block head %}
-    <title>initsearh</title>
-    <link href="static/css/index.css" rel="stylesheet" type="text/css" />
-    <script src="static/node_modules/jquery/dist/jquery.min.js"></script>
-    <meta name="viewport" content="initial-scale=1.0">
-    <meta charset="utf-8">
+<title>initsearh</title>
+<link href="static/css/index.css" rel="stylesheet" type="text/css" />
+<script src="static/node_modules/jquery/dist/jquery.min.js"></script>
+<meta name="viewport" content="initial-scale=1.0">
+<meta charset="utf-8">
 {% endblock %}
 
 <script type="text/javascript">
@@ -19,16 +19,46 @@
 </script>
 
 {% block main %}
-<div class="class1" style="background-color:#9BCB3B;">
-    <p>Hi</p>
+<div class="class1" style="background-color: aliceblue;">
+    <form action="{% url 'gengraph' %}" method="POST">
+        {% csrf_token %}
+        <label for="patientid">Get Patient:</label>
+        <input type="text" name="patientid" id="patientid">
+        <button type="submit" class="btn btn-primary btn-sm">Go</button>
+    </form>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" />
+    <div class="table-responsive">
+        <table id="classes" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Classes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if classes %}
+                {% for class in classes %}
+                <tr>
+                    <form action="/nodegraph" method="POST">
+                        <td><button type="submit" id="distcmp" name="muldistrecs" class="btn btn-sm"
+                                value="class">{{ class }} </button></td>
+                    </form>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+        <table id="header-fixed" class="table table-striped table-hover"></table>
+    </div>
 </div>
-<div class="class2" style="background-color:#1AB99E;">
-    <p>Aditya</p>
+<div class="class2" style="background-color: azure;">
+    {% if mainnode %}
+    {% end if %}
 </div>
-<div class="class3" style="background-color:#F36F25;">
-    <p>This is Working!</p>
+<div class="class3" style="background-color:aliceblue;">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <form action="/">
+        <button type="submit" onclick="" style="float: right" class="btn"><i class="fa fa-home"></i> Home</button>
+    </form>
+    <p> FILTER </p>
 </div>
-
-
-
 {% endblock %}

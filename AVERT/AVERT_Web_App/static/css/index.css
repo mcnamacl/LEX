@@ -1,17 +1,27 @@
 body {
     width: 100%;
     float: left;
-  }
-  
-  .class1,
-  .class2,
-  .class3 {
-    width: 33.33%;
+}
+
+.class1 {
+    width: 25%;
     float: left;
-    height: 100px;
-  }
-  
-  p {
+    height: max-content;
+}
+
+.class2 {
+    width: 55%;
+    float: left;
+    height: max-content;
+}
+
+.class3 {
+    width: 20%;
+    float: left;
+    height: max-content;
+}
+
+p {
     padding-top: 25px;
     text-align: center;
-  }
+}
