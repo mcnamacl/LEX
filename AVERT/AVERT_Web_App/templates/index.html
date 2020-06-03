@@ -20,61 +20,6 @@
 </script>
 
 {% block main %}
-<!-- <div class="container-fluid">
-    <div class="row">
-        <div class="col-sm-8">
-            <form action="{% url 'gengraph' %}" method="POST">
-                {% csrf_token %}
-                <label for="patientid">Get Patient:</label>
-                <input type="text" name="patientid" id="patientid">
-                <button type="submit" class="btn btn-primary btn-sm">Go</button>
-            </form>
-        </div>
-        <div class="col-sm-4">
-            <form action="/">
-                <link rel="stylesheet"
-                href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-                <button type="submit" onclick="" style="float: right" class="btn"><i class="fa fa-home"></i>
-                    Home</button>
-            </form>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col" style="background-color: aliceblue;">
-            <div class="table-responsive" style="table-layout: auto; width: 20vw">
-                <table id="classes" class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Classes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if classes %}
-                        {% for class in classes %}
-                        <tr ondragover="allowDrop(event)" ondrop="drop(event)">
-                            <form action="/nodegraph" method="POST">
-                                <td>
-                                    <div draggable="true" ondragstart="drag(event)" class="classname" id="{{ class }}">
-                                        {{ class }}</div>
-                                </td>
-                            </form>
-                        </tr>
-                        {% endfor %}
-                        {% endif %}
-                    </tbody>
-                </table>
-                <table id="header-fixed" class="table table-striped table-hover"></table>
-            </div>
-            <div class="col-6" ondragover="allowDrop(event)" ondrop="drop(event)"
-                style="display: inline-block; background-color: azure;" class="dropzone">
-                 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute; " preserveAspectRatio="false"></svg>
-            </div>
-            <div class="col" style="background-color:aliceblue;">
-                <p> FILTER </p>
-            </div>
-        </div>
-    </div>
-</div> -->
 <div id="boxes">
     <div id="leftbox" style="background-color: aliceblue;">
         <form action="{% url 'gengraph' %}" method="POST">
@@ -93,12 +38,13 @@
                 </thead>
                 <tbody>
                     {% if classes %}
-                    {% for class in classes %}
-                    <tr ondragover="allowDrop(event)" ondrop="drop(event)">
+                    {% for class, tmp in classes.items %}
+                    <tr>
                         <form action="/nodegraph" method="POST">
                             <td>
-                                <div draggable="true" ondragstart="drag(event)" class="classname" id="{{ class }}">
-                                    {{ class }}</div>
+                                <button onclick="addNode('{{ class }}', '{{ class }}', '{{ class }}', 0)" type="button"
+                                    class="classname" id="{{ class }}">
+                                    {{ class }}</button>
                             </td>
                         </form>
                     </tr>
@@ -110,8 +56,7 @@
         </div>
     </div>
 
-    <div ondragover="allowDrop(event)" ondrop="drop(event)" id="middlebox"
-        style="display: inline-block; background-color: azure;" class="dropzone">
+    <div id="middlebox" style="display: inline-block; background-color: azure;" class="dropzone">
         <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
     </div>
 
@@ -132,96 +77,247 @@
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
-    var nodes = [
-        { id: "mammal", group: 0, label: "Mammals", level: 1 },
-        { id: "dog", group: 0, label: "Dogs", level: 2 },
-        { id: "cat", group: 0, label: "Cats", level: 2 },
-        { id: "fox", group: 0, label: "Foxes", level: 2 },
-        { id: "elk", group: 0, label: "Elk", level: 2 },
-        { id: "insect", group: 1, label: "Insects", level: 1 },
-        { id: "ant", group: 1, label: "Ants", level: 2 },
-        { id: "bee", group: 1, label: "Bees", level: 2 },
-        { id: "fish", group: 2, label: "Fish", level: 1 },
-        { id: "carp", group: 2, label: "Carp", level: 2 },
-        { id: "pike", group: 2, label: "Pikes", level: 2 }
+    var classes = JSON.parse('{{ classesjson|safe }}');
+    console.log(classes);
+    var baseNodes = [
     ]
+
+    var baseLinks = [
+    ]
+
+    var nodes = [...baseNodes]
+    var links = [...baseLinks]
+
+    function getNeighbors(node) {
+        return baseLinks.reduce(function (neighbors, link) {
+            if (link.target.id === node.id) {
+                neighbors.push(link.source.id)
+            } else if (link.source.id === node.id) {
+                neighbors.push(link.target.id)
+            }
+            return neighbors
+        },
+            [node.id]
+        )
+    }
+
+    function isNeighborLink(node, link) {
+        return link.target.id === node.id || link.source.id === node.id
+    }
+
+
+    function getNodeColor(node, neighbors) {
+        if (Array.isArray(neighbors) && neighbors.indexOf(node.id) > -1) {
+            return node.level === 1 ? 'blue' : 'green'
+        }
+
+        return node.level === 1 ? 'red' : 'gray'
+    }
+
+
+    function getLinkColor(node, link) {
+        return isNeighborLink(node, link) ? 'green' : '#E5E5E5'
+    }
+
+    function getTextColor(node, neighbors) {
+        return Array.isArray(neighbors) && neighbors.indexOf(node.id) > -1 ? 'green' : 'black'
+    }
 
     var height = $("#middlebox").height();
     var width = $("#middlebox").width();
 
-
-    console.log(height);
-
     var svg = d3.select('svg')
     svg.attr('width', width).attr('height', height)
 
+    var linkElements,
+        nodeElements,
+        textElements
+
+    // we use svg groups to logically group the elements together
+    var linkGroup = svg.append('g').attr('class', 'links')
+    var nodeGroup = svg.append('g').attr('class', 'nodes')
+    var textGroup = svg.append('g').attr('class', 'texts')
+
+    var query = {}
+
     // simulation setup with all forces
+    var linkForce = d3
+        .forceLink()
+        .id(function (link) { return link.id })
+        .strength(function (link) { return link.strength })
+        .distance(200)
+
     var simulation = d3
         .forceSimulation()
-        .force('charge', d3.forceManyBody().strength(-120))
+        .force('link', linkForce)
+        .force('charge', d3.forceManyBody().strength(-20))
         .force('center', d3.forceCenter(width / 2, height / 2))
 
-
-    function getNodeColor(node) {
-        return node.level === 1 ? 'red' : 'gray'
-    }
-
-    var nodeElements = svg.append("g")
-        .attr("class", "nodes")
-        .selectAll("circle")
-        .data(nodes)
-        .enter().append("circle")
-        .attr("r", 10)
-        .attr("fill", getNodeColor)
-
-    var textElements = svg.append("g")
-        .attr("class", "texts")
-        .selectAll("text")
-        .data(nodes)
-        .enter().append("text")
-        .text(function (node) { return node.label })
-        .attr("font-size", 15)
-        .attr("dx", 15)
-        .attr("dy", 4)
-
-    simulation.nodes(nodes).on('tick', () => {
-        nodeElements
-            .attr('cx', function (node) { return node.x })
-            .attr('cy', function (node) { return node.y })
-        textElements
-            .attr('x', function (node) { return node.x })
-            .attr('y', function (node) { return node.y })
+    var dragDrop = d3.drag().on('start', function (node) {
+        node.fx = node.x
+        node.fy = node.y
+    }).on('drag', function (node) {
+        simulation.alphaTarget(0.7).restart()
+        node.fx = d3.event.x
+        node.fy = d3.event.y
+    }).on('end', function (node) {
+        if (!d3.event.active) {
+            simulation.alphaTarget(0)
+        }
+        node.fx = null
+        node.fy = null
     })
 
-</script>
-
-<script>
-    function drag(ev) {
-        ev.dataTransfer.setData("text", ev.target.id);
-    }
-
-    function drop(ev) {
-        ev.preventDefault();
-        var data = ev.dataTransfer.getData("text");
-        addNode(data);
-        ev.target.appendChild(document.getElementById(data));
-    }
-
-    function allowDrop(ev) {
-        ev.preventDefault();
-    }
-
-    var nodes = {};
-
-    function addNode(val) {
-        if (nodes[val] == null) {
-            nodes[val] = "true";
-        } else if (nodes[val] == "true") {
-            nodes[val] = "false";
-        } else if (nodes[val] == "false") {
-            nodes[val] = "true";
+    // select node is called on every click
+    // we either update the data according to the selection
+    // or reset the data if the same node is clicked twice
+    function selectNode(selectedNode) {
+        console.log(selectedNode.id);
+        if (selectedNode.id in classes) {
+            var tmpclassname = selectedNode.id
+            var tmpvals = classes[tmpclassname]
+            var length = 10;
+            if (tmpvals.length < 10) {
+                length = tmpvals.length;
+            }
+            for (var i = 0; i < length; i++) {
+                addNode(tmpvals[i], tmpclassname, tmpvals[i], 1);
+            }
+            resetData()
+            updateSimulation()
+        } else {
+            
         }
-        console.log(nodes)
+
+        var neighbors = getNeighbors(selectedNode)
+
+        // we modify the styles to highlight selected nodes
+        nodeElements.attr('fill', function (node) { return getNodeColor(node, neighbors) })
+        textElements.attr('fill', function (node) { return getTextColor(node, neighbors) })
+        linkElements.attr('stroke', function (link) { return getLinkColor(selectedNode, link) })
     }
+
+    // this helper simple adds all nodes and links
+    // that are missing, to recreate the initial state
+    function resetData() {
+        var nodeIds = nodes.map(function (node) { return node.id })
+
+        baseNodes.forEach(function (node) {
+            if (nodeIds.indexOf(node.id) === -1) {
+                nodes.push(node)
+            }
+        })
+
+        links = baseLinks
+    }
+
+    // diffing and mutating the data
+    function updateData(selectedNode) {
+        var neighbors = getNeighbors(selectedNode)
+        var newNodes = baseNodes.filter(function (node) {
+            return neighbors.indexOf(node.id) > -1 || node.level === 1
+        })
+
+        var diff = {
+            removed: nodes.filter(function (node) { return newNodes.indexOf(node) === -1 }),
+            added: newNodes.filter(function (node) { return nodes.indexOf(node) === -1 })
+        }
+
+        diff.removed.forEach(function (node) { nodes.splice(nodes.indexOf(node), 1) })
+        diff.added.forEach(function (node) { nodes.push(node) })
+
+        links = baseLinks.filter(function (link) {
+            return link.target.id === selectedNode.id || link.source.id === selectedNode.id
+        })
+    }
+
+    function updateGraph() {
+        // links
+        linkElements = linkGroup.selectAll('line')
+            .data(links, function (link) {
+                return link.target.id + link.source.id
+            })
+
+        linkElements.exit().remove()
+
+        var linkEnter = linkElements
+            .enter().append('line')
+            .attr('stroke-width', 1)
+            .attr('stroke', 'rgba(50, 50, 50, 0.2)')
+
+        linkElements = linkEnter.merge(linkElements)
+
+        // nodes
+        nodeElements = nodeGroup.selectAll('circle')
+            .data(nodes, function (node) { return node.id })
+
+        nodeElements.exit().remove()
+
+        var nodeEnter = nodeElements
+            .enter()
+            .append('circle')
+            .attr('r', 10)
+            .attr('fill', function (node) { return node.level === 1 ? 'red' : 'gray' })
+            .call(dragDrop)
+            // we link the selectNode method here
+            // to update the graph on every click
+            .on('click', selectNode)
+
+        nodeElements = nodeEnter.merge(nodeElements)
+
+        // texts
+        textElements = textGroup.selectAll('text')
+            .data(nodes, function (node) { return node.id })
+
+        textElements.exit().remove()
+
+        var textEnter = textElements
+            .enter()
+            .append('text')
+            .text(function (node) { return node.label })
+            .attr('font-size', 15)
+            .attr('dx', 15)
+            .attr('dy', 4)
+
+        textElements = textEnter.merge(textElements)
+    }
+
+    function updateSimulation() {
+        updateGraph()
+
+        var radius = 15;
+
+        simulation.nodes(nodes).on('tick', () => {
+            nodeElements
+                .attr('cx', function (d) { return d.x = Math.max(radius, Math.min(width - radius, d.x)); })
+                .attr("cy", function (d) { return d.y = Math.max(radius, Math.min(height - radius, d.y)); });
+            textElements
+                .attr('x', function (node) { return node.x })
+                .attr('y', function (node) { return node.y })
+            linkElements
+                .attr('x1', function (link) { return link.source.x })
+                .attr('y1', function (link) { return link.source.y })
+                .attr('x2', function (link) { return link.target.x })
+                .attr('y2', function (link) { return link.target.y })
+        })
+
+        simulation.force('link').links(links)
+        simulation.alphaTarget(0.7).restart()
+    }
+
+    function addNode(idval, targetval, labelval, levelval) {
+        var groupnum = Object.keys(classes).indexOf(targetval);
+        baseNodes.push({ id: idval, group: groupnum, label: labelval, level: levelval })
+        if (levelval == 1) {
+            baseLinks.push({ target: targetval, source: idval, strength: 0.7 })
+        }
+
+        resetData()
+        updateSimulation()
+    }
+
+    // last but not least, we call updateSimulation
+    // to trigger the initial render
+    updateSimulation()
 </script>
 {% endblock %}

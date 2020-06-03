@@ -14,18 +14,23 @@ def gengraph(request):
     if request.POST.get("patientid") != '':
         patientID = request.POST.get("patientid")
         classes = genClasses(patientID)
+        context["classesjson"] = json.dumps(classes)
         context["classes"] = classes
         
     return render(request, "index.html", context)
 
 def genClasses(patientID):
-    classes = []
+    classes = {}
     querywh = """PREFIX rkdvoc: <http://data.avert.ie/voc/rkd/>
-		SELECT DISTINCT ?label
+        PREFIX rkddict: <http://data.avert.ie/data/rkddict/> 
+
+		SELECT DISTINCT ?label (strafter(str(?_sub_label), str(rkddict:)) as ?sub_label)
 		WHERE {
 			{  ?cat a rkdvoc:RKDRecord.
     		   ?cat rkdvoc:patientID '""" + patientID + """'.
     		   ?cat  rkdvoc:recordCategory ?label .
+               ?cat rkdvoc:hasReading ?r1.
+    		   ?r1 rkdvoc:hasTerm ?_sub_label	.
   			} 
     }"""
 
@@ -34,7 +39,9 @@ def genClasses(patientID):
     r = getjsonresults(site)
 
     for c in r:
-        classes.append(c["label"]["value"])
+        if c["label"]["value"] not in classes:
+            classes[c["label"]["value"]] = []
+        classes[c["label"]["value"]].append(c["sub_label"]["value"])
 
     return classes
 
