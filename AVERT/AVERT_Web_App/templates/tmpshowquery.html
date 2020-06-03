@@ -9,14 +9,10 @@
 <meta charset="utf-8">
 {% endblock %}
 
-{% block body %}
+{% block main %}
 <div>
-    {% for q in queries|safe %}
+    {% for q in queries %}
     <p>{{ q }}</p>
     {% endfor %}
 </div>
-
-<script>
-    console.log('{{ queries }}')
-</script>
 {% endblock %}

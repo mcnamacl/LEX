@@ -63,9 +63,7 @@ def genClasses(patientID):
 def tmpshowquery(request):
     context ={}
     q = request.POST.get("tmpquery")
-    
-    print(q, file=sys.stderr)
-    context["queries"] = q
+    context["queries"] = json.loads(q)
     return render(request, "tmpshowquery.html", context)
 
 def initsearch(request):
