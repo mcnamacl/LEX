@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<title>tmpshowquery</title>
+<link href="static/css/index.css" rel="stylesheet" type="text/css" />
+<script src="static/node_modules/jquery/dist/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<meta charset="utf-8">
+{% endblock %}
+
+{% block body %}
+<div>
+    {% for q in queries|safe %}
+    <p>{{ q }}</p>
+    {% endfor %}
+</div>
+
+<script>
+    console.log('{{ queries }}')
+</script>
+{% endblock %}

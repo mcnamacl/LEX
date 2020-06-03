@@ -13,18 +13,20 @@ def gengraph(request):
     context = {}
     if request.POST.get("patientid") != '':
         patientID = request.POST.get("patientid")
-        classes = genClasses(patientID)
+        classes, filters = genClasses(patientID)
         context["classesjson"] = json.dumps(classes)
         context["classes"] = classes
+        context["filters"] = json.dumps(filters)
         
     return render(request, "index.html", context)
 
 def genClasses(patientID):
     classes = {}
+    filters = {}
     querywh = """PREFIX rkdvoc: <http://data.avert.ie/voc/rkd/>
         PREFIX rkddict: <http://data.avert.ie/data/rkddict/> 
 
-		SELECT DISTINCT ?label (strafter(str(?_sub_label), str(rkddict:)) as ?sub_label)
+		SELECT DISTINCT ?label ?kvp1 ?v1 ?v2 (strafter(str(?_sub_label), str(rkddict:)) as ?sub_label)
 		WHERE {
 			{  ?cat a rkdvoc:RKDRecord.
     		   ?cat rkdvoc:patientID '""" + patientID + """'.
@@ -32,6 +34,12 @@ def genClasses(patientID):
                ?cat rkdvoc:hasReading ?r1.
     		   ?r1 rkdvoc:hasTerm ?_sub_label	.
   			} 
+
+        OPTIONAL {
+                ?_sub_label rkdvoc:hasKeyValuePair ?kvp1.
+                ?kvp1 rkdvoc:key ?v1.
+                ?kvp1 rkdvoc:value ?v2.
+            }
     } order by asc(UCASE(str(?sub_label)))"""
 
     finalquery = createquery(querywh)
@@ -42,9 +50,23 @@ def genClasses(patientID):
         label = c["label"]["value"].replace('_', ' ')
         if label not in classes:
             classes[label] = []
-        classes[label].append(c["sub_label"]["value"].replace('_', ' '))
+        if c["sub_label"]["value"].replace('_', ' ') not in classes[label]:
+            classes[label].append(c["sub_label"]["value"].replace('_', ' '))
+        if "kvp1" in c:
+            sub_label = c["sub_label"]["value"].replace('_', ' ')
+            if sub_label not in filters:
+                filters[sub_label] = []
+            filters[sub_label].append(c["v2"]["value"].replace('_', ' '))
 
-    return classes
+    return classes, filters
+
+def tmpshowquery(request):
+    context ={}
+    q = request.POST.get("tmpquery")
+    
+    print(q, file=sys.stderr)
+    context["queries"] = q
+    return render(request, "tmpshowquery.html", context)
 
 def initsearch(request):
     return render(request, "initsearch.html")
