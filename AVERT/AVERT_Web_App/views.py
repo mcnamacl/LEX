@@ -32,16 +32,17 @@ def genClasses(patientID):
                ?cat rkdvoc:hasReading ?r1.
     		   ?r1 rkdvoc:hasTerm ?_sub_label	.
   			} 
-    }"""
+    } order by asc(UCASE(str(?sub_label)))"""
 
     finalquery = createquery(querywh)
     site = urlify(finalquery)   
     r = getjsonresults(site)
 
     for c in r:
-        if c["label"]["value"] not in classes:
-            classes[c["label"]["value"]] = []
-        classes[c["label"]["value"]].append(c["sub_label"]["value"])
+        label = c["label"]["value"].replace('_', ' ')
+        if label not in classes:
+            classes[label] = []
+        classes[label].append(c["sub_label"]["value"].replace('_', ' '))
 
     return classes
 

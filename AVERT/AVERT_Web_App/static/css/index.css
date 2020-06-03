@@ -1,12 +1,12 @@
 #leftbox {
     float: left;
-    width: 25%;
+    width: 20%;
     height: 100vh;
 }
 
 #middlebox {
     float: left;
-    width: 55%;
+    width: 60%;
     height: 100vh;
 }
 
