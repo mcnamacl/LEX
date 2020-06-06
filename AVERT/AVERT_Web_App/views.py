@@ -17,6 +17,7 @@ def gengraph(request):
         context["classesjson"] = json.dumps(classes)
         context["classes"] = classes
         context["filters"] = json.dumps(filters)
+        context["patientid"] = patientID
         
     return render(request, "index.html", context)
 
