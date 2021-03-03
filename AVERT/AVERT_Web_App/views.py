@@ -187,6 +187,33 @@ def get_recs(adddist, startdate, enddate, mulpatients):
 
     return recs
 
+# Random query in fuseki
+#     PREFIX rkdvoc: <http://data.avert.ie/voc/rkd/>
+# PREFIX rkddict: <http://data.avert.ie/data/rkddict/> 
+# PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+# 		SELECT DISTINCT ?label ?var ?lab ?v1 ?v2  (strafter(str(?_sub_label), str(rkddict:)) as ?sub_label)
+# 		WHERE {
+# 			  ?cat a rkdvoc:RKDRecord.
+#     		   ?cat rkdvoc:patientID "1".
+#     		   ?cat  rkdvoc:recordCategory ?label .
+#     		   ?cat rkdvoc:hasReading ?r1.
+#     		 ?r1 rkdvoc:hasTerm ?_sub_label	.
+#   OPTIONAL { ?var rdfs:label ?lab. }
+#     {
+#         ?r1 rkdvoc:hasValue ?v1.
+#     }
+#     UNION
+#     {
+#         ?r1 rkdvoc:oboLabel ?v1.
+#     }
+    
+#     OPTIONAL {
+#     	?var rkdvoc:hasKeyValuePair ?kvp1.
+#         ?kvp1 rkdvoc:key ?v1.
+#         ?kvp1 rkdvoc:value ?v2.
+#     }
+#     } 
+
 
 # def displayInitialRes(request):
 #     if (request.POST.get("timequantity") != None and request.POST.get("timemeasure")):
