@@ -9,26 +9,11 @@
 <meta charset="utf-8">
 {% endblock %}
 
-<script type="text/javascript">
-    var test;
-    function onload() {
-        test = document.getElementById('search');
-    }
-    function clickedAllData() {
-        location.href = 'http://data.avert.ie/values/!http://rdfs.org/sioc/ns%23container_of///';
-    }
-</script>
-
 {% block main %}
 <div id="boxes">
     <div id="leftbox" style="background-color: aliceblue;">
-        <form action="{% url 'gengraph' %}" method="POST">
-            {% csrf_token %}
-            <label for="patientid">Get Patient:</label>
-            <input type="text" name="patientid" id="patientid">
-            <button type="submit" class="btn btn-primary btn-sm">Go</button>
-        </form>
-        <p>Patient Id: {{ patientid }}</p>
+        <h6>Information about the dataset:</h6>
+        <p style="font-size: small;">{{ info }}</p>
         <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" />
         <div class="table-responsive">
             <table id="classes" class="table table-striped table-hover">
@@ -38,20 +23,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% if classes %}
-                    {% for class, tmp in classes.items %}
+                    {% for layer, tmp in layers.items %}
                     <tr>
-                        <form action="/nodegraph" method="POST">
-                            <td>
-                                <button style="font-size: 15px; border: none; background-color: #a1d2f7;"
-                                    onclick="addNode('{{ class }}', '{{ class }}', '{{ class }}', 0)" type="button"
-                                    class="classname" id="{{ class }}">
-                                    {{ class }}</button>
-                            </td>
-                        </form>
+                        <!-- <form action="/nodegraph" method="POST"> -->
+                        <td>
+                            <button style="font-size: 15px; border: none; background-color: #a1d2f7;"
+                                onclick="addNode('{{ layer }}', 'patient', '{{ layer }}', 1)" type="button"
+                                class="classname" id="{{ layer }}">
+                                {{ layer }}</button>
+                        </td>
+                        <!-- </form> -->
                     </tr>
                     {% endfor %}
-                    {% endif %}
                 </tbody>
             </table>
             <table id="header-fixed" class="table table-striped table-hover"></table>
@@ -69,43 +52,34 @@
             <button type="submit" onclick="" style="float: right" class="btn"><i class="fa fa-home"></i>
                 Home</button>
         </form>
-        <h6>Outline of Pattern</h6>
+        <h6>Potential Values</h6>
         <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" />
-        <div class="table-responsive">
-            <table id="querytable" class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th>Sub Category</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody id="querytablebody">
-                    <tr>
-                    </tr>
+        <div class="table-responsive" style="top: 0; right: 0; width: 220pt; height: 150pt">
+            <table id="valuetable" class="table table-striped table-hover">
+                <tbody id="valuetable">
                 </tbody>
             </table>
             <table id="header-fixed" class="table table-striped table-hover"></table>
+        </div>  
+        <div id="viewquery" style="float: center; position: relative; ">
         </div>
-        <button type="submit" onclick="getQuery()"
-            style="float: left; position: absolute; bottom: 0; left: 170vh; background-color: #d4e4ff;" class="btn"
-            id="gentmp">Generate Query</button>
-        <form action="{% url 'tmpshowquery' %}" method="POST">
+        <form action="{% url 'displayResults' %}" method="POST">
             {% csrf_token %}
             <button type="submit"
                 style="float: right; position: absolute; bottom: 0; right: 0; background-color: #d4e4ff;" class="btn"
-                name="tmpquery" id="tmpquery" value="">Submit</button>
+                name="query" id="query" value="">Submit</button>
         </form>
     </div>
 </div>
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
-    var finalquery = []
-    var subClassLengths = {}
+    var potentialQuery = {};
 
-    var classes = JSON.parse('{{ classesjson|safe }}');
-    var filters = JSON.parse('{{ filters|safe }}')
+    var information = JSON.parse('{{ info|safe }}')
+    potentialQuery["information"] = information;
+
+    var layers = JSON.parse('{{ layersjson|safe }}');
 
     var baseNodes = [
     ]
@@ -116,31 +90,31 @@
     var nodes = [...baseNodes]
     var links = [...baseLinks]
 
-    for (var tmpClass in classes) {
-        subClassLengths[tmpClass] = 0;
-    }
+    // for (var tmpClass in classes) {
+    //     subClassLengths[tmpClass] = 0;
+    // }
 
-    function getQuery() {
-        var myTab = document.getElementById('querytable');
+    // function getQuery() {
+    //     var myTab = document.getElementById('querytable');
 
-        for (i = 2; i < myTab.rows.length; i++) {
+    //     for (i = 2; i < myTab.rows.length; i++) {
 
-            var objCells = myTab.rows.item(i).cells;
+    //         var objCells = myTab.rows.item(i).cells;
 
-            var tmpq = { recordCat: objCells.item(0).innerHTML, subrecordcat: objCells.item(1).innerHTML }
+    //         var tmpq = { recordCat: objCells.item(0).innerHTML, subrecordcat: objCells.item(1).innerHTML }
 
-            subcat = objCells.item(1).innerHTML
-            if (subcat in filters) {
-                var val = $('#' + subcat.replace(/ /g, '_') + ' :selected').text();;
-                tmpq.value = val
-            }
+    //         subcat = objCells.item(1).innerHTML
+    //         if (subcat in filters) {
+    //             var val = $('#' + subcat.replace(/ /g, '_') + ' :selected').text();;
+    //             tmpq.value = val
+    //         }
 
-            finalquery.push(tmpq)
-        }
-        tmpquery = document.getElementById("tmpquery");
-        tmpquery.value = JSON.stringify(finalquery)
-        console.log(finalquery)
-    }
+    //         finalquery.push(tmpq)
+    //     }
+    //     tmpquery = document.getElementById("tmpquery");
+    //     tmpquery.value = JSON.stringify(finalquery)
+    //     console.log(finalquery)
+    // }
 
     function getNeighbors(node) {
         return baseLinks.reduce(function (neighbors, link) {
@@ -221,29 +195,83 @@
     })
 
     function selectNode(selectedNode) {
-        if (selectedNode.id in classes) {
-            var tmpclassname = selectedNode.id
-            var tmpvals = classes[tmpclassname]
-            var length = 0;
-            var startIndex = 0;
-            if (tmpvals.length < length) {
-                length = tmpvals.length;
-            } else if (subClassLengths[tmpclassname] + 10 <= tmpvals.length) {
-                startIndex = subClassLengths[tmpclassname];
-                length = subClassLengths[tmpclassname] + 10;
-                removeNodes(tmpclassname);
-            } else {
-                startIndex = subClassLengths[tmpclassname];
-                length = tmpvals.length
-                subClassLengths[tmpclassname] = 0;
-                removeNodes(tmpclassname)
+        var nodeName = selectedNode.id
+        var level = selectedNode.level
+
+        var sourceNodeName = "";
+        var intermediateNodeName = "";
+        var values = []
+
+        if (level > 0) {
+            switch (level) {
+                case 1:
+                    values = layers[nodeName];
+                    break;
+                case 2:
+                    console.log(links);
+                    sourceNodeName = "";
+                    for (var i = 0; i < links.length; i++) {
+                        if (links[i]["target"]["id"] == nodeName) {
+                            sourceNodeName = links[i]["source"]["id"]
+                        }
+                    }
+                    console.log(sourceNodeName + " " + nodeName)
+                    values = layers[sourceNodeName][nodeName];
+                    break;
+                case 3:
+                    console.log(links);
+                    sourceNodeName = ""
+                    intermediateNodeName = "";
+                    for (var i = 0; i < links.length; i++) {
+                        if (links[i]["target"]["id"] == nodeName) {
+                            intermediateNodeName = links[i]["source"]["id"]
+                        }
+                    }
+                    for (var i = 0; i < links.length; i++) {
+                        if (links[i]["target"]["id"] == intermediateNodeName) {
+                            sourceNodeName = links[i]["source"]["id"]
+                        }
+                    } 
+                    values = layers[sourceNodeName][intermediateNodeName][nodeName];
+                    break;
             }
-            for (var i = startIndex; i < length; i++) {
-                addNode(tmpvals[i], tmpclassname, tmpvals[i], 1);
+
+            try {
+                var index = 0;
+                var table = document.getElementById("valuetable");
+                table.innerHTML = "";
+                console.log(values)
+                values.forEach(function (value) {
+                    table = document.getElementById("valuetable");
+                    if (!value.includes("total") && !value.includes("integer") && !value.includes("dateTime")) {
+                        var row = table.insertRow(index);
+                        var cell = row.insertCell(0);
+                        cell.innerHTML = value;
+                        var checkbox = document.createElement("INPUT");
+                        checkbox.type = "checkbox";
+                        var checkboxCell = row.insertCell(1);
+                        var idVal = value + "_" + nodeName;
+                        if (intermediateNodeName != "") {
+                            idVal = idVal + "_" + intermediateNodeName;
+                        }
+                        if (sourceNodeName != "") {
+                            idVal = idVal + "_" + sourceNodeName;
+                        }
+                        console.log("hello" + idVal);
+                        checkbox.setAttribute('id', idVal);
+                        checkboxCell.appendChild(checkbox);
+                        document.getElementById(idVal).addEventListener('change', validate);
+                        index = index + 1;
+                    }
+                });
+            } catch {
+                for (var key in values) {
+                    addNode(key, nodeName, key, level + 1);
+                }
             }
-            resetData()
-            updateSimulation()
         }
+        resetData()
+        updateSimulation()
 
         var neighbors = getNeighbors(selectedNode)
 
@@ -310,18 +338,18 @@
             .call(dragDrop)
             .on('click', selectNode)
             .on('dblclick', addToQuery)
-            .on("mouseover", function (d) {
-                if (d.id in filters) {
-                    var filterNames = ""
-                    for (var i = 0; i < filters[d.id].length; i++) {
-                        filterNames = filters[d.id][i] + "<br/>" + filterNames;
-                    }
-                    tooltip.html(filterNames);
-                } else {
-                    tooltip.text("N/A")
-                }
-                return tooltip.style("visibility", "visible");
-            })
+            // .on("mouseover", function (d) {
+            //     if (d.id in filters) {
+            //         var filterNames = ""
+            //         for (var i = 0; i < filters[d.id].length; i++) {
+            //             filterNames = filters[d.id][i] + "<br/>" + filterNames;
+            //         }
+            //         tooltip.html(filterNames);
+            //     } else {
+            //         tooltip.text("N/A")
+            //     }
+            //     return tooltip.style("visibility", "visible");
+            // })
             .on("mousemove", function () { return tooltip.style("top", (d3.event.pageY - 10) + "px").style("left", (d3.event.pageX + 10) + "px"); })
             .on("mouseout", function () { return tooltip.style("visibility", "hidden"); });
 
@@ -358,27 +386,27 @@
         loadTableData(recordCategory[1], subCategory)
     }
 
-    function loadTableData(recordCategory, subCategory) {
-        const table = document.getElementById("querytablebody");
-        let row = table.insertRow();
-        let cat = row.insertCell(0);
-        cat.innerHTML = recordCategory;
-        let subcat = row.insertCell(1);
-        subcat.innerHTML = subCategory;
+    // function loadTableData(recordCategory, subCategory) {
+    //     const table = document.getElementById("querytablebody");
+    //     let row = table.insertRow();
+    //     let cat = row.insertCell(0);
+    //     cat.innerHTML = recordCategory;
+    //     let subcat = row.insertCell(1);
+    //     subcat.innerHTML = subCategory;
 
-        if (subCategory in filters) {
-            let dropdown = row.insertCell(2);
-            subCategoryUnder = subCategory.replace(/ /g, '_');
-            var select = "<SELECT class='select' id=" + subCategoryUnder + ">\n"
+    //     if (subCategory in filters) {
+    //         let dropdown = row.insertCell(2);
+    //         subCategoryUnder = subCategory.replace(/ /g, '_');
+    //         var select = "<SELECT class='select' id=" + subCategoryUnder + ">\n"
 
-            select = select + "<OPTION selected value=" + filters[subCategory][0] + ">" + filters[subCategory][0] + "<\/OPTION>\n"
+    //         select = select + "<OPTION selected value=" + filters[subCategory][0] + ">" + filters[subCategory][0] + "<\/OPTION>\n"
 
-            for (var i = 1; i < filters[subCategory].length; i++) {
-                select = select + "<OPTION value=" + filters[subCategory][i] + ">" + filters[subCategory][i] + "<\/OPTION>\n"
-            }
-            dropdown.innerHTML = select
-        }
-    }
+    //         for (var i = 1; i < filters[subCategory].length; i++) {
+    //             select = select + "<OPTION value=" + filters[subCategory][i] + ">" + filters[subCategory][i] + "<\/OPTION>\n"
+    //         }
+    //         dropdown.innerHTML = select
+    //     }
+    // }
 
 
     function updateSimulation() {
@@ -404,12 +432,11 @@
         simulation.alphaTarget(0.7).restart()
     }
 
-    function addNode(idval, targetval, labelval, levelval) {
-        var groupnum = Object.keys(classes).indexOf(targetval);
-        baseNodes.push({ id: idval, group: groupnum, label: labelval, level: levelval })
-        if (levelval == 1) {
-            baseLinks.push({ target: targetval, source: idval, strength: 0.7 })
-        }
+    function addNode(idval, sourceval, labelval, levelval) {
+        baseNodes.push({ id: idval, label: labelval, level: levelval })
+
+        baseLinks.push({ target: idval, source: sourceval, strength: 0.7 })
+
         resetData()
         updateSimulation()
     }
@@ -433,6 +460,82 @@
         }
         console.log(nodes);
         // console.log(baseLinks);
+    }
+
+    if (!nodes.includes("patient")) {
+        addNode('patient', 'patient', 'patient', 0);
+    }
+
+    function validate() {
+        if (this.checked) {
+            var queryValues = this.id.split('_');
+            var length = queryValues.length;
+            switch(length) {
+                case 2:
+                    var levelOne = queryValues[1];
+                    if (!potentialQuery.hasOwnProperty(levelOne)) {
+                        potentialQuery[levelOne] = [];
+                    }
+                    potentialQuery[levelOne].push(queryValues[0]);
+                    break;
+                case 3:
+                    var levelOne = queryValues[2];
+                    var levelTwo = queryValues[1];
+                    if (!potentialQuery.hasOwnProperty(levelOne)) {
+                        potentialQuery[levelOne] = {};
+                        potentialQuery[levelOne][levelTwo] = [];
+                    } else if (potentialQuery.hasOwnProperty(levelOne) && !potentialQuery[levelOne].hasOwnProperty(levelTwo)) {
+                        potentialQuery[levelOne][levelTwo] = [];
+                    }
+                    potentialQuery[levelOne][levelTwo].push(queryValues[0]);
+                    break;
+                case 4:
+                    var levelOne = queryValues[3];
+                    var levelTwo = queryValues[2];
+                    var levelThree = queryValues[1]
+                    if (!potentialQuery.hasOwnProperty(levelOne)) {
+                        potentialQuery[levelOne] = {};
+                        potentialQuery[levelOne][levelTwo] = {};
+                        potentialQuery[levelOne][levelTwo][levelThree] = []
+                    } else if (potentialQuery.hasOwnProperty(levelOne) && !potentialQuery[levelOne].hasOwnProperty(levelTwo)) {
+                        potentialQuery[levelOne][levelTwo] = {};
+                    } else if (potentialQuery.hasOwnProperty(levelOne) && potentialQuery[levelOne].hasOwnProperty(levelTwo) && !potentialQuery[levelOne][levelTwo].hasOwnProperty(levelThree)) {
+                        potentialQuery[levelOne][levelTwo] = [];
+                    }
+                    potentialQuery[levelOne][levelTwo][levelThree].push(queryValues[0]);
+                    break;
+            }
+            console.log(potentialQuery);
+        } else {
+            var queryValues = this.id.split('_');
+            var length = queryValues.length;
+            switch(length) {
+                case 2:
+                    var levelOne = queryValues[1];
+                    potentialQuery[levelOne].splice(queryValues[0]);
+                    if (potentialQuery[levelOne].length == 0) {
+                        delete potentialQuery[levelOne];
+                    }
+                    break;
+                case 3:
+                    var levelOne = queryValues[2];
+                    var levelTwo = queryValues[1];
+                    potentialQuery[levelOne][levelTwo].splice(queryValues[0]);
+                    if (potentialQuery[levelOne][levelTwo].length == 0) {
+                        var test = potentialQuery[levelOne]
+                        delete potentialQuery[levelOne][levelTwo];
+                    }
+                    if (Object.keys(potentialQuery[levelOne]).length == 0) {
+                        delete potentialQuery[levelOne];
+                    }
+                    break;
+            }
+        }
+        console.log(potentialQuery);
+        // TODO: make the display look nice.
+        var updateQuery = document.getElementById('query');
+        updateQuery.value = JSON.stringify(potentialQuery);
+        document.getElementById('viewquery').innerHTML = JSON.stringify(potentialQuery);
     }
 
     updateSimulation()

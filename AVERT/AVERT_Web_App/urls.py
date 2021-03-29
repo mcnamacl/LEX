@@ -3,10 +3,5 @@ from . import views
 
 urlpatterns = [
     path("", views.index),
-    path("gengraph", views.gengraph, name="gengraph"),
-    path("tmpshowquery", views.tmpshowquery, name="tmpshowquery"),
-    path("initsearch", views.initsearch, name="initisearch"),
-    path("getpatientid", views.getpatientid, name="getpatientid"),
-    # path("displayinitialres", views.displayinitialres, name="displayinitialres"),
-    # path("distillerrecsdispcmp", views.distillerrecsdispcmp, name="distillerrecsdispcmp"),
+    path("displayResults", views.displayResults, name="displayResults"),
 ]
