@@ -90,7 +90,7 @@ def genClasses():
     } ORDER BY xsd:integer(strafter(str(?rdf_n), str(rdf:_)))"""
 
     finalquery = createquery(query)
-    site = urlify(finalquery)   
+    site = urlify(finalquery)  
     res = getjsonresults(site)
 
     for c in res:
@@ -128,16 +128,26 @@ def genClasses():
     return layers
 
 def displayResults(request):
-    context ={}
-    query = request.POST.get("query")
-    query = json.loads(query)
-    context["queries"] = query
-    genQuery(query)
+    context = {}
+    finalQuery = ""
+    if request.POST.get("query"):
+        query = request.POST.get("query")
+        query = json.loads(query)
+        rkdvoc = query["information"][voidVocab].replace('<', "").replace('>', "")
+        finalQuery = genQuery(query, rkdvoc)
+        patientIDs = genPatientIds(finalQuery)
+        request.session['ids'] = patientIDs
+        request.session['queryvalue'] = finalQuery
+    else:
+        patientIDs = request.session.get('ids')
+        finalQuery = request.session.get('queryvalue')
+    context["ids"] = json.dumps(patientIDs)
+    context["query"] = finalQuery
+    # genPatientQuery(0, rkdvoc)
     return render(request, "displayResults.html", context)
 
-def genQuery(query):
+def genQuery(query, rkdvoc):
     finalQuery = ""
-    rkdvoc = query["information"][voidVocab].replace('<', "").replace('>', "")
 
     select = "SELECT ?id "
 
@@ -158,7 +168,6 @@ def genQuery(query):
                     where = where + " ?rec " + "<" + rkdvoc + levelOne + ">" + " '" + val + "' ."
             else:
                 where = where + " ?rec " + "<" + rkdvoc + levelOne + ">" + " ?var" + str(index) + " ." 
-                select = select + "?var" + str(index) + " "
 
                 for levelTwo in query[levelOne]:
                     if type(query[levelOne][levelTwo]) is list:
@@ -166,7 +175,6 @@ def genQuery(query):
                             where = where + " ?var" + str(index) + " " + "<" + rkdvoc + levelTwo + "> '" + levelThree + "' ." 
                     else:
                         where = where + " ?var" + str(index) + " "  + "<" + rkdvoc + levelTwo + ">" + " ?var" + str(index + 1) + " ." 
-                        select = select + "?var" + str(index + 1) + " "
                         index = index + 1
 
                         for levelThree in query[levelOne][levelTwo]:
@@ -175,8 +183,24 @@ def genQuery(query):
 
                 index = index + 1 
     finalQuery = select + where + "}"
-    print(finalQuery)
+    finalQuery = finalQuery + groupby + " ?id"
+    return finalQuery
 
+def genPatientQuery(patientID, rkdvoc):
+    select = "SELECT ?rec ?s ?p ?d ?r ?t ?w "
+    query = select + " WHERE { ?rec " + "<" + rkdvoc + "patientID" + "> '" + str(patientID) + "' . ?rec ?s ?p . OPTIONAL { ?p ?d ?r . OPTIONAL { ?r ?t ?w } } } "
+    print(query)
+
+def genPatientIds(query):
+    finalquery = createquery(query)
+    site = urlify(finalquery)  
+    res = getjsonresults(site)
+
+    ids = []
+
+    for id in res:
+        ids.append(id["id"]["value"])
+    return ids
 
 def getjsonresults(site):
     r = requests.get(url=site)
@@ -185,9 +209,6 @@ def getjsonresults(site):
 
 def createquery(query):
     return "http://localhost:3030/DB1/query?query=" + query
-
-def removeurl(text):
-    return text.replace("http://data.avert.ie/data/", "")
 
 def urlify(in_string):
     in_string = in_string.replace(" ", "%20")
