@@ -58,14 +58,17 @@
         <h6 style="float: left">Potential Values</h6>
         <h6 style="float: left; font-size:small">(In order of frequency)</h6>
         <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" />
-        <div class="table-responsive" style="top: 0; right: 0; width: 220pt; height: 150pt">
+        <div class="table-responsive" style="top: 0; right: 0; width: 235pt; height: 180pt">
             <table id="valuetable" class="table table-striped table-hover">
                 <tbody id="valuetable">
                 </tbody>
             </table>
-            <table id="header-fixed" class="table table-striped table-hover"></table>
-        </div>  
-        <div id="viewquery" style="float: center; position: relative; ">
+        </div>
+        <div id="viewquery" class="table-responsive" style="top: 0; right: 0; width: 235pt; height: 180pt">
+            <table id="querytable" class="table" style="font-size: 80%">
+                <tbody id="querytable">
+                </tbody>
+            </table>
         </div>
         <form action="{% url 'displayResults' %}" method="POST">
             {% csrf_token %}
@@ -198,18 +201,15 @@
                     values = layers[nodeName];
                     break;
                 case 2:
-                    console.log(links);
                     sourceNodeName = "";
                     for (var i = 0; i < links.length; i++) {
                         if (links[i]["target"]["id"] == nodeName) {
                             sourceNodeName = links[i]["source"]["id"]
                         }
                     }
-                    console.log(sourceNodeName + " " + nodeName)
                     values = layers[sourceNodeName][nodeName];
                     break;
                 case 3:
-                    console.log(links);
                     sourceNodeName = ""
                     intermediateNodeName = "";
                     for (var i = 0; i < links.length; i++) {
@@ -221,7 +221,7 @@
                         if (links[i]["target"]["id"] == intermediateNodeName) {
                             sourceNodeName = links[i]["source"]["id"]
                         }
-                    } 
+                    }
                     values = layers[sourceNodeName][intermediateNodeName][nodeName];
                     break;
             }
@@ -423,7 +423,7 @@
         if (this.checked) {
             var queryValues = this.id.split('_');
             var length = queryValues.length;
-            switch(length) {
+            switch (length) {
                 case 2:
                     var levelOne = queryValues[1];
                     if (!potentialQuery.hasOwnProperty(levelOne)) {
@@ -458,11 +458,10 @@
                     potentialQuery[levelOne][levelTwo][levelThree].push(queryValues[0]);
                     break;
             }
-            console.log(potentialQuery);
         } else {
             var queryValues = this.id.split('_');
             var length = queryValues.length;
-            switch(length) {
+            switch (length) {
                 case 2:
                     var levelOne = queryValues[1];
                     potentialQuery[levelOne].splice(queryValues[0]);
@@ -484,11 +483,42 @@
                     break;
             }
         }
-        console.log(potentialQuery);
-        // TODO: make the display look nice.
+        genQueryTable(potentialQuery);
+    }
+
+    function genQueryTable(potentialQuery) {
         var updateQuery = document.getElementById('query');
         updateQuery.value = JSON.stringify(potentialQuery);
-        document.getElementById('viewquery').innerHTML = JSON.stringify(potentialQuery);
+        var queryTable = document.getElementById('querytable');
+        queryTable.innerHTML = "";
+
+        var index = 0;
+        for (var key in potentialQuery) {
+            if (key != "information") {
+                var row = queryTable.insertRow(index);
+                var cell = row.insertCell(0);
+                cell.innerHTML = key;
+                for (var subKey in potentialQuery[key]) {
+                    cell = row.insertCell(1);
+                    cell.innerHTML = subKey;
+                    for (var i = 0; i < potentialQuery[key][subKey].length; i++) {
+                        if (i > 0) {
+                            row = queryTable.insertRow(index);
+                            var cell = row.insertCell(0);
+                            cell.innerHTML = key;
+                            cell = row.insertCell(1);
+                            cell.innerHTML = subKey;
+                            cell = row.insertCell(2);
+                            cell.innerHTML = potentialQuery[key][subKey][i];
+                        } else {
+                            cell = row.insertCell(2);
+                            cell.innerHTML = potentialQuery[key][subKey][i];
+                        }
+                    }
+                }
+                index = index + 1;
+            }
+        }
     }
 
     updateSimulation()
