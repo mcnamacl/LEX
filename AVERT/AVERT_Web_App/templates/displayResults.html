@@ -49,7 +49,7 @@
         cell.innerHTML = id;
         cell = row.insertCell(1);
         cell.setAttribute('id', id);
-        cell.innerHTML = '<form action="/displayPatientInformation"><button style="font-size: 15px; border: none; background-color: #C8DBE4;" type="submit" type="button" class="classname" id="' + id + ' value="' + id + " >Patient " + id + "</button></form>";
+        cell.innerHTML = '<form action="/displayPatientInformation" method="POST">{% csrf_token %}<input style="font-size: 15px; border: none; background-color: #C8DBE4;" type="submit" value="Patient ' + id + '" name="patientID"/></form>';
         index = index + 1;
     });
 

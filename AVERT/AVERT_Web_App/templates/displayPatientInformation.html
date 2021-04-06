@@ -2,7 +2,6 @@
 
 {% block head %}
 <title>tmpshowquery</title>
-<link href="static/css/index.css" rel="stylesheet" type="text/css" />
 <script src="static/node_modules/jquery/dist/jquery.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
@@ -17,6 +16,86 @@
         Home</button>
 </form>
 
+<label for="categories">Choose a category:</label>
+<form action="/displayPatientInformation" id="displayPatientInformation" method="POST">
+    {% csrf_token %}
+    <select name="categories" id="categories" value="{{ categories }}">
+        {% for category, tmp in categories.items %}
+        <option value="{{ category }}" id="{{ category }}">{{ category }}</option>
+        <script>
+            var category = '{{ category }}'
+            var finalCategory = category.replace(/([A-Z]+)/g, " $1").replace(/([A-Z][a-z])/g, " $1");
+            finalCategory = finalCategory.charAt(0).toUpperCase() + finalCategory.slice(1);
+            var optionVal = document.getElementById(category);
+            optionVal.innerText = finalCategory;
+        </script>
+        {% endfor %}
+    </select>
+    <button id="patientID" name="patientID" type="submit" value="{{ patientID }}">Submit</button>
+</form>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" />
+<div id="queryvalue" value="" class="table-responsive" style="page-break-inside:auto">
+    <table id="categorytable" class="table table-striped table-hover">
+        <thead id="categorytableheaders">
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
 <script>
+    var categoryValues = JSON.parse('{{ categoryValues|safe }}');
+    var tableHeaders = JSON.parse('{{ tableHeaders|safe }}');
+    tableHeaders = tableHeaders["headers"]
+
+    var titleTableHeaders = [];
+
+    tableHeaders.forEach(function (header) {
+        var headerTitle = genTitleCase(header)
+        titleTableHeaders.push(headerTitle);
+    });
+
+    function genTitleCase(preTitleCase) {
+        var postTitleCase = preTitleCase.replace(/([A-Z]+)/g, " $1").replace(/([A-Z][a-z])/g, " $1");
+        postTitleCase = postTitleCase.charAt(0).toUpperCase() + postTitleCase.slice(1);
+        return postTitleCase;
+    }
+
+    var tableHeader = document.getElementById("categorytableheaders");
+    titleTableHeaders.forEach(function (header) {
+        tableHeader.appendChild(createNewTableHeader(header));
+    });
+
+    function createNewTableHeader(headerTitle) {
+        const temp = document.createElement('th');
+        temp.appendChild(document.createTextNode(headerTitle));
+        return temp
+    }
+
+    console.log(tableHeaders)
+
+    var tableBody = document.getElementById("categorytable");
+    var index = 0;
+    for (var value in categoryValues) {
+        var row = tableBody.insertRow(index);
+        if (categoryValues[value].length) {
+            var cell = row.insertCell(0);
+            cell.innerHTML = categoryValues[value];
+        } else {
+            for (var i = 0; i < tableHeaders.length; i++) {
+                var cell = row.insertCell(i);
+                if (categoryValues[value].hasOwnProperty(tableHeaders[i])) {
+                    cell.innerHTML = categoryValues[value][tableHeaders[i]];
+                } else {
+                    cell.innerHTML = "-";
+                }
+            }
+            index = index + 1;
+        }
+    }
+
 </script>
 {% endblock %}

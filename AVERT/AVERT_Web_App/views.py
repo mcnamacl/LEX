@@ -148,9 +148,86 @@ def displayResults(request):
         finalQuery = request.session.get('queryvalue')
     context["ids"] = json.dumps(patientIDs)
     context["query"] = finalQuery
-    # genPatientQuery(0, rkdvoc)
     return render(request, "displayResults.html", context)
 
+# Remove hardcoded rkdvoc.
+def displayPatientInformation(request):
+    context = {}
+    patientID = request.POST['patientID']
+    if len(patientID.split(" ")) > 1:
+        patientID = patientID.split(" ")[1]
+
+    if "categories" in request.POST:
+        currentCategory = request.POST["categories"]
+        currentCategoryValues, tableHeaders = genPatientQuery(patientID, currentCategory, rkdvoc)        
+        context["categoryValues"] = json.dumps(currentCategoryValues)
+        context["tableHeaders"] = json.dumps(tableHeaders)
+
+    categories = genPatientCategories(patientID, rkdvoc)
+    context["categories"] = categories
+    context["patientID"] = patientID
+
+    return render(request, "displayPatientInformation.html", context)
+
+def genPatientCategories(patientID, rkdvoc):
+    select = "SELECT ?s "
+    query = select + "WHERE { ?rec " + "<" + rkdvoc + "patientID" + "> '" + str(patientID) + "' . ?rec ?s ?p . } GROUP BY ?s"
+    finalquery = createquery(query)
+    site = urlify(finalquery)  
+    res = getjsonresults(site)
+
+    categories = {}
+
+    for category in res:
+        key = category["s"]["value"]
+        if "type" not in key:
+            categories[key.replace(rkdvoc, "")] = key
+    
+    return categories
+
+def genPatientQuery(patientID, category, rkdvoc):
+    select = "SELECT ?p ?d ?r ?t ?w "
+    query = select + " WHERE { ?rec " + "<" + rkdvoc + "patientID" + "> '" + str(patientID) + "' . ?rec " + "<" + rkdvoc + category + ">" + " ?p . OPTIONAL { ?p ?d ?r . OPTIONAL { ?r ?t ?w } } } ORDER BY ASC(?r)"
+
+    finalquery = createquery(query)
+    site = urlify(finalquery)  
+    res = getjsonresults(site)
+
+    result = {}
+
+    tableHeaders = {}
+    tableHeaders["headers"] = []
+    
+    for cat in res:
+        key = cat["p"]["value"]
+        if "d" in cat:
+            if not key in result:
+                result[key] = {}
+            subkey = cat["d"]["value"]
+            if not "type" in subkey and not "t" in cat:
+                if subkey.replace(rkdvoc, "") not in tableHeaders["headers"]:
+                    tableHeaders["headers"].append(subkey.replace(rkdvoc, ""))
+                if not "lastVisit" in subkey:
+                    if not "datatype" in cat["r"] or not "dateTime" in cat["r"]["datatype"]:
+                        result[key][subkey.replace(rkdvoc, "")] = cat["r"]["value"]
+                    else:
+                        result[key][subkey.replace(rkdvoc, "")] = cat["r"]["value"].split("T")[0]
+                else:
+                    result[key][subkey.replace(rkdvoc, "")] = cat["r"]["value"].split("T")[0]
+                
+            if "t" in cat:
+                subsubKey = cat["t"]["value"]
+                if not "type" in subsubKey:
+                    result[key][subsubKey.replace(rkdvoc, "")] = cat["w"]["value"]
+                    if subkey.replace(rkdvoc, "") not in tableHeaders["headers"]:
+                        tableHeaders["headers"].append(subsubKey.replace(rkdvoc, ""))
+        else:
+            result[category] = key
+            if category not in tableHeaders["headers"]:
+                tableHeaders["headers"].append(category) 
+    
+    return result, tableHeaders
+        
 def genQuery(query, rkdvoc):
     finalQuery = ""
 
@@ -191,11 +268,6 @@ def genQuery(query, rkdvoc):
     finalQuery = finalQuery + groupby + " ?id"
     return finalQuery
 
-def genPatientQuery(patientID, rkdvoc):
-    select = "SELECT ?rec ?s ?p ?d ?r ?t ?w "
-    query = select + " WHERE { ?rec " + "<" + rkdvoc + "patientID" + "> '" + str(patientID) + "' . ?rec ?s ?p . OPTIONAL { ?p ?d ?r . OPTIONAL { ?r ?t ?w } } } "
-    print(query)
-
 def genPatientIds(query):
     finalquery = createquery(query)
     site = urlify(finalquery)  
@@ -224,5 +296,3 @@ def urlify(in_string):
     in_string = in_string.replace("^", "%5E")   
     return in_string
 
-def displayPatientInformation(request):
-    return render(request, "displayPatientInformation.html")
