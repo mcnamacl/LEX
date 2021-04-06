@@ -13,9 +13,14 @@ def index(request):
     context = {}
     layers = genClasses()
     info = genInfo()
-    context["info"] = json.dumps(info)
-    context["layersjson"] = json.dumps(layers)
-    context["layers"] = layers
+    if (request.session.get("info")):
+        context["info"] = request.session.get("info")
+        context["layersjson"] = request.session.get("info")
+        context["layers"] = request.session.get("layers")
+    else:
+        context["info"] = json.dumps(info)
+        context["layersjson"] = json.dumps(layers)
+        context["layers"] = layers
     return render(request, "index.html", context)
 
 def genInfo():
@@ -218,3 +223,6 @@ def urlify(in_string):
     in_string = in_string.replace("&", "%26") 
     in_string = in_string.replace("^", "%5E")   
     return in_string
+
+def displayPatientInformation(request):
+    return render(request, "displayPatientInformation.html")
