@@ -162,6 +162,7 @@ def displayPatientInformation(request):
         currentCategoryValues, tableHeaders = genPatientQuery(patientID, currentCategory, rkdvoc)        
         context["categoryValues"] = json.dumps(currentCategoryValues)
         context["tableHeaders"] = json.dumps(tableHeaders)
+        context["selectedCategory"] = currentCategory
 
     categories = genPatientCategories(patientID, rkdvoc)
     context["categories"] = categories

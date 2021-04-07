@@ -12,8 +12,13 @@
 {% block main %}
 <form action="/">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <button type="submit" onclick="" style="float: right" class="btn"><i class="fa fa-home"></i>
+    <button type="submit" style="float: right" class="btn"><i class="fa fa-home"></i>
         Home</button>
+</form>
+<form action="/displayResults">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <button type="submit" style="float: right; position: relative;" class="btn">&#x2190; 
+        Back</button>
 </form>
 
 <label for="categories">Choose a category:</label>
@@ -32,6 +37,14 @@
         {% endfor %}
     </select>
     <button id="patientID" name="patientID" type="submit" value="{{ patientID }}">Submit</button>
+    <h6 style="position: relative;" id="selectedCategory"> 
+        <script>
+            var selectedCategory = '{{ selectedCategory }}'
+            var finalResult = selectedCategory.replace(/([A-Z]+)/g, " $1").replace(/([A-Z][a-z])/g, " $1");
+            finalResult = finalResult.charAt(0).toUpperCase() + finalResult.slice(1);
+            var hValue = document.getElementById("selectedCategory");
+            hValue.innerHTML = "<b>Showing values for: </b>" + finalResult;
+        </script></h6>
 </form>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
