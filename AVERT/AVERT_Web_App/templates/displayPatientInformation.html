@@ -21,7 +21,7 @@
         Back</button>
 </form>
 
-<label for="categories">Choose a category:</label>
+<label for="categories">Choose a category relating to patient {{ patientID }}:</label>
 <form action="/displayPatientInformation" id="displayPatientInformation" method="POST">
     {% csrf_token %}
     <select name="categories" id="categories" value="{{ categories }}">

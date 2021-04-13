@@ -140,13 +140,13 @@ def displayResults(request):
         query = json.loads(query)
         rkdvoc = query["information"][voidVocab].replace('<', "").replace('>', "")
         finalQuery = genQuery(query, rkdvoc)
-        patientIDs = genPatientIds(finalQuery)
-        request.session['ids'] = patientIDs
+        patientInfo = genPatientInfo(finalQuery)
+        request.session['patientInfo'] = patientInfo
         request.session['queryvalue'] = finalQuery
     else:
-        patientIDs = request.session.get('ids')
+        patientInfo = request.session.get('patientInfo')
         finalQuery = request.session.get('queryvalue')
-    context["ids"] = json.dumps(patientIDs)
+    context["patientInfo"] = json.dumps(patientInfo)
     context["query"] = finalQuery
     return render(request, "displayResults.html", context)
 
@@ -232,7 +232,7 @@ def genPatientQuery(patientID, category, rkdvoc):
 def genQuery(query, rkdvoc):
     finalQuery = ""
 
-    select = "SELECT ?id "
+    select = "SELECT ?id ?gender ?birthyear "
 
     selectvalues = ""
 
@@ -241,6 +241,8 @@ def genQuery(query, rkdvoc):
     groupby = "GROUP BY "
 
     where = where + " ?rec " + "<" + rkdvoc + "patientID> ?id. "
+    where = where + " ?rec " + "<" + rkdvoc + "gender> ?gender. "
+    where = where + " ?rec " + "<" + rkdvoc + "yearOfBirth> ?birthyear . "
 
     index = 1
 
@@ -266,7 +268,7 @@ def genQuery(query, rkdvoc):
 
                 index = index + 1 
     finalQuery = select + where + "}"
-    finalQuery = finalQuery + groupby + " ?id"
+    finalQuery = finalQuery + groupby + " ?id ?gender ?birthyear "
     return finalQuery
 
 def genPatientIds(query):
@@ -279,6 +281,20 @@ def genPatientIds(query):
     for id in res:
         ids.append(id["id"]["value"])
     return ids
+
+def genPatientInfo(query):
+    finalquery = createquery(query)
+    site = urlify(finalquery)  
+    print(site)
+    res = getjsonresults(site)
+
+    patientInfo = {}
+
+    for id in res:
+        patientInfo[id["id"]["value"]] = []
+        patientInfo[id["id"]["value"]].append(id["gender"]["value"])
+        patientInfo[id["id"]["value"]].append(id["birthyear"]["value"])
+    return patientInfo
 
 def getjsonresults(site):
     r = requests.get(url=site)
