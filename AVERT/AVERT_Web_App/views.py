@@ -198,11 +198,16 @@ def genPatientQuery(patientID, category, rkdvoc):
 
     tableHeaders = {}
     tableHeaders["headers"] = []
+
+    organIndex = 0
     
     for cat in res:
         key = cat["p"]["value"]
         if "d" in cat:
-            if not key in result:
+            if "organ_pattern" in key and not "type" in cat["d"]["value"]:
+                key = key + str(organIndex)
+                organIndex = organIndex + 1
+            if not key in result and not "type" in cat["d"]["value"]:
                 result[key] = {}
             subkey = cat["d"]["value"]
             if not "type" in subkey and not "t" in cat:
