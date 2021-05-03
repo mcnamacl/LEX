@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from flask import Flask, request, render_template, jsonify
 from collections import defaultdict
 import urllib.request, json, requests, sys, re
 import datetime
