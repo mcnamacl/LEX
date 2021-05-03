@@ -415,27 +415,6 @@
         updateSimulation()
     }
 
-    function removeNodes(targetval) {
-        console.log(targetval)
-        var groupnum = Object.keys(classes).indexOf(targetval);
-        var index = 0;
-        console.log(nodes)
-        // console.log(baseNodes)
-        for (var i = 0; i < 10; i++) {
-            console.log(nodes[i])
-            // console.log(baseNodes[tmpnode].group)
-            // if (nodes[i].group == groupnum) {
-            //     nodes = nodes.splice(index, 1)
-            //     console.log(nodes)
-            //     // nodes = nodes.splice(index, 1);
-            // } else {
-            //     ++index;
-            // }
-        }
-        console.log(nodes);
-        // console.log(baseLinks);
-    }
-
     if (!nodes.includes("patient")) {
         addNode('patient', 'patient', 'Patient', 0);
     }

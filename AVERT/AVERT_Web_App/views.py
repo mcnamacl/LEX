@@ -9,6 +9,7 @@ from collections import OrderedDict
 rkdvoc = "http://ontologies.adaptcentre.ie/fairvasc#"
 voidVocab = "http://rdfs.org/ns/void#vocabulary"
 
+# Generates the home page.
 def index(request):
     context = {}
     layers = genClasses()
@@ -23,23 +24,16 @@ def index(request):
         context["layers"] = layers
     return render(request, "index.html", context)
 
+# Queries the VoID for the information about the dataset.
 def genInfo():
     info = {}
-    query = """ prefix void: <http://rdfs.org/ns/void#> 
-                prefix rkddata: <http://data.fairvasc.ie/resource/rkd/> 
-                prefix rkdvoc: <http://ontologies.adaptcentre.ie/fairvasc#> 
-                prefix xsd: <http://www.w3.org/2001/XMLSchema#> 
-                prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
-                prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-                prefix dcterms: <http://purl.org/dc/terms/> 
-                prefix prov: <http://www.w3.org/ns/prov#> 
-                prefix foaf: <http://xmlns.com/foaf/0.1/> 
-                prefix : <#> 
-
+    query = """ prefix rkdvoc: <http://ontologies.adaptcentre.ie/fairvasc#> 
+                prefix void: <http://rdfs.org/ns/void#>
+                
                 SELECT DISTINCT ?key ?value
                 WHERE {
-                rkdvoc:RKD ?key ?value
-                FILTER (?key != void:subset)
+                    rkdvoc:RKD ?key ?value
+                    FILTER (?key != void:subset)
                 }
             """
     finalquery = createquery(query)
@@ -59,18 +53,13 @@ def genInfo():
             info[key] = val["value"]["value"]
     return info
         
+# Queries the VoID for the structure.
 def genClasses():
     layers = {}
     query = """prefix void: <http://rdfs.org/ns/void#> 
-    prefix rkddata: <http://data.fairvasc.ie/resource/rkd/> 
     prefix rkdvoc: <http://ontologies.adaptcentre.ie/fairvasc#> 
-    prefix xsd: <http://www.w3.org/2001/XMLSchema#> 
-    prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
-    prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-    prefix dcterms: <http://purl.org/dc/terms/> 
-    prefix prov: <http://www.w3.org/ns/prov#> 
-    prefix foaf: <http://xmlns.com/foaf/0.1/> 
-    prefix : <#> 
+    prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+    prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
     SELECT DISTINCT ?layer_one ?layer_two ?layer_three ?n ?item ?rdf_n 
     WHERE 
@@ -132,6 +121,7 @@ def genClasses():
                 layers[layerOne][layerTwo][layerThree].append(c["item"]["value"])
     return layers
 
+# Page that displays all the patients who match a certain query.
 def displayResults(request):
     context = {}
     finalQuery = ""
@@ -150,7 +140,8 @@ def displayResults(request):
     context["query"] = finalQuery
     return render(request, "displayResults.html", context)
 
-# Remove hardcoded rkdvoc.
+# TODO: Remove hardcoded rkdvoc.
+# Page that displays the information about a single patient.
 def displayPatientInformation(request):
     context = {}
     patientID = request.POST['patientID']
@@ -170,6 +161,7 @@ def displayPatientInformation(request):
 
     return render(request, "displayPatientInformation.html", context)
 
+# Returns the top level information about a single patient.
 def genPatientCategories(patientID, rkdvoc):
     select = "SELECT ?s "
     query = select + "WHERE { ?rec " + "<" + rkdvoc + "patientID" + "> '" + str(patientID) + "' . ?rec ?s ?p . } GROUP BY ?s"
@@ -186,6 +178,7 @@ def genPatientCategories(patientID, rkdvoc):
     
     return categories
 
+# Returns all the information about a single patient.
 def genPatientQuery(patientID, category, rkdvoc):
     select = "SELECT ?p ?d ?r ?t ?w "
     query = select + " WHERE { ?rec " + "<" + rkdvoc + "patientID" + "> '" + str(patientID) + "' . ?rec " + "<" + rkdvoc + category + ">" + " ?p . OPTIONAL { ?p ?d ?r . OPTIONAL { ?r ?t ?w } } } ORDER BY ASC(?r)"
@@ -233,7 +226,8 @@ def genPatientQuery(patientID, category, rkdvoc):
                 tableHeaders["headers"].append(category) 
     
     return result, tableHeaders
-        
+
+# Returns the id, gender, and birth year about all patients who match a particular pattern.         
 def genQuery(query, rkdvoc):
     finalQuery = ""
 
@@ -276,17 +270,7 @@ def genQuery(query, rkdvoc):
     finalQuery = finalQuery + groupby + " ?id ?gender ?birthyear "
     return finalQuery
 
-def genPatientIds(query):
-    finalquery = createquery(query)
-    site = urlify(finalquery)  
-    res = getjsonresults(site)
-
-    ids = []
-
-    for id in res:
-        ids.append(id["id"]["value"])
-    return ids
-
+# Packages the patient info into a JSON object ready to be displayed.
 def genPatientInfo(query):
     finalquery = createquery(query)
     site = urlify(finalquery)  
@@ -301,14 +285,17 @@ def genPatientInfo(query):
         patientInfo[id["id"]["value"]].append(id["birthyear"]["value"])
     return patientInfo
 
+# Helper function that performs an initial parsing.
 def getjsonresults(site):
     r = requests.get(url=site)
     r = r.json()
     return r["results"]["bindings"]
 
+# Helper function for Fuseki.
 def createquery(query):
     return "http://localhost:3030/DB1/query?query=" + query
 
+# URLifies a string.
 def urlify(in_string):
     in_string = in_string.replace(" ", "%20")
     in_string = in_string.replace("#", "%23")
