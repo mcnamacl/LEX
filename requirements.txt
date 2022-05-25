@@ -84,7 +84,7 @@ pycrypto==2.6.1
 pycryptodome==3.9.7
 pyenchant==3.2.0
 PyGithub==1.44
-PyJWT==1.7.1
+PyJWT==2.4.0
 pylint==2.4.4
 pyparsing==2.4.6
 pyrsistent==0.15.2
