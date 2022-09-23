@@ -73,7 +73,7 @@ Pillow==7.0.0
 pipenv==2018.11.26
 plotly==3.9.0
 progressbar2==3.47.0
-protobuf==3.11.3
+protobuf==3.18.3
 psycopg2==2.8.5
 py-translate==1.0.3
 pyaes==1.6.1
